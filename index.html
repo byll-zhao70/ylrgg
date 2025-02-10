@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teams</title>
+  <style>
+    /* Global styles and fade-in animation */
+    body {
+      display: flex;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      height: 100vh;
+      background-color: #1e1e1e;
+      color: #e0e0e0;
+    }
+
+    /* Fade container styles (only applied to main content) */
+    .fade-container {
+      transition: opacity 0.5s ease;
+    }
+    
+    /* Fade-in keyframes */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    /* Apply the fade-in animation */
+    .fade-in {
+      animation: fadeIn 0.5s forwards;
+    }
+
+    /* Fade-out animation class */
+    .fade-out {
+      animation: fadeOut 0.5s forwards;
+    }
+    
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+    
+    /* Sidebar styles */
+    .sidebar {
+      width: 80px;
+      background-color: #151515;
+      color: white;
+      padding: 10px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .sidebar a {
+      text-decoration: none;
+      color: white;
+      margin: 10px 0;
+      padding: 10px 0;
+      width: 100%;
+      text-align: center;
+      border-radius: 5px;
+      transition: background-color 0.3s, transform 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .sidebar a img {
+      width: 24px;
+      height: 24px;
+      margin-bottom: 5px;
+    }
+    
+    .sidebar a:hover {
+      background-color: #444;
+      transform: scale(1.05);
+    }
+    
+    .sidebar a.active {
+      background-color: #4caf50;
+    }
+    
+    /* Main content area */
+    .main-content {
+      flex-grow: 1;
+      padding: 20px;
+      overflow-x: hidden;
+      width: calc(100% - 80px);
+    }
+    
+    /* Section styling */
+    .section {
+      margin-bottom: 30px;
+    }
+    
+    .section h2 {
+      color: #4caf50;
+      margin-bottom: 10px;
+    }
+    
+    .section .items {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    
+    .section .item {
+      background-color: #2b2b2b;
+      padding: 15px;
+      border-radius: 10px;
+      cursor: pointer;
+      flex: 1 0 21%; /* roughly 4 items per row */
+      text-align: center;
+      transition: background-color 0.3s, transform 0.2s;
+    }
+    
+    .section .item:hover {
+      background-color: #444;
+      transform: scale(1.05);
+    }
+
+    .section-title {
+            display: flex;
+            justify-content: space-between;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #4caf50;
+            margin-bottom: 10px;
+            background: none;
+            border: none;
+            width: 100%;
+            text-align: left;
+    }
+    .section-title span {
+        font-size: 20px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar with navigation links -->
+  <div class="sidebar">
+    <a href="front.html" class="active" onclick="setActiveSidebarButton(this)">
+      <img src="https://via.placeholder.com/24" alt="Home">
+      Home
+    </a>
+    <a href="#" onclick="setActiveSidebarButton(this)">
+      <img src="https://via.placeholder.com/24" alt="Match List">
+      Match List
+    </a>
+    <a href="teams.html" onclick="redirectWithFade(event, 'teams.html')">
+      <img src="https://via.placeholder.com/24" alt="Teams and Players">
+      Teams and Players
+    </a>
+    <a href="#" onclick="setActiveSidebarButton(this)">
+      <img src="https://via.placeholder.com/24" alt="Forums">
+      Forums
+    </a>
+  </div>
+
+  <!-- Main content with sections -->
+  <div class="main-content fade-container fade-in">
+    <!-- Upcoming Matches Section -->
+    <div class="section" id="upcoming-matches">
+      <h2>Upcoming Matches</h2>
+      <div class="items">
+        <div class="item" onclick="alert('Upcoming Match 1 clicked')">Match 1</div>
+        <div class="item" onclick="alert('Upcoming Match 2 clicked')">Match 2</div>
+        <div class="item" onclick="alert('Upcoming Match 3 clicked')">Match 3</div>
+        <div class="item" onclick="alert('Upcoming Match 4 clicked')">Match 4</div>
+      </div>
+    </div>
+    
+    <!-- Top Teams Section -->
+    <div class="section" id="top-teams">
+      <h2>Top Teams</h2>
+      <div class="items">
+        <div class="item" onclick="alert('Top Team A clicked')">Team A</div>
+        <div class="item" onclick="alert('Top Team B clicked')">Team B</div>
+        <div class="item" onclick="alert('Top Team C clicked')">Team C</div>
+        <div class="item" onclick="alert('Top Team D clicked')">Team D</div>
+      </div>
+    </div>
+    
+    <!-- Top Players Section -->
+    <div class="section" id="top-players">
+      <h2>Top Players</h2>
+      <div class="items">
+        <div class="item" onclick="alert('Top Player 1 clicked')">Player 1</div>
+        <div class="item" onclick="alert('Top Player 2 clicked')">Player 2</div>
+        <div class="item" onclick="alert('Top Player 3 clicked')">Player 3</div>
+        <div class="item" onclick="alert('Top Player 4 clicked')">Player 4</div>
+      </div>
+    </div>
+    
+    <!-- Top Posts Section -->
+    <div class="section" id="top-posts">
+      <h2>Top Posts</h2>
+      <div class="items">
+        <div class="item" onclick="alert('Top Post 1 clicked')">Post 1</div>
+        <div class="item" onclick="alert('Top Post 2 clicked')">Post 2</div>
+        <div class="item" onclick="alert('Top Post 3 clicked')">Post 3</div>
+        <div class="item" onclick="alert('Top Post 4 clicked')">Post 4</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Function to update the active sidebar button
+    function setActiveSidebarButton(button) {
+      const links = document.querySelectorAll('.sidebar a');
+      links.forEach(link => link.classList.remove('active'));
+      button.classList.add('active');
+    }
+
+    function redirectWithFade(event, destination) {
+      event.preventDefault(); // Prevent immediate navigation
+      // Add the fade-out class to the main content container (not the sidebar)
+      const fadeContainer = document.querySelector('.fade-container');
+      fadeContainer.classList.remove('fade-in');
+      fadeContainer.classList.add('fade-out');
+      setTimeout(() => {
+        window.location.href = destination;
+      }, 500); // Delay matches the fade-out duration (0.5s)
+    }
+    
+  </script>
+</body>
+</html>

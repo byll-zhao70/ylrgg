@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rankings Page</title>
+  <style>
+    body {
+      display: flex;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      height: 100vh;
+      background-color: #1e1e1e;
+      color: #e0e0e0;
+    }
+
+    /* Fade container styles (only applied to main content) */
+    .fade-container {
+      transition: opacity 0.5s ease;
+    }
+
+    /* Fade-in keyframes */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    /* Apply the fade-in animation */
+    .fade-in {
+      animation: fadeIn 0.5s forwards;
+    }
+    
+    /* Fade-out animation class */
+    .fade-out {
+      animation: fadeOut 0.5s forwards;
+    }
+    
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+    
+    .sidebar {
+      width: 80px;
+      background-color: #151515;
+      color: white;
+      padding: 10px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .sidebar a {
+      text-decoration: none;
+      color: white;
+      margin: 10px 0;
+      padding: 10px 0;
+      width: 100%;
+      text-align: center;
+      border-radius: 5px;
+      transition: background-color 0.3s, transform 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .sidebar a img {
+      width: 24px;
+      height: 24px;
+      margin-bottom: 5px;
+    }
+    
+    .sidebar a:hover {
+      background-color: #444;
+      transform: scale(1.05);
+    }
+    
+    .sidebar a.active {
+      background-color: #4caf50;
+    }
+    
+    .main-content {
+      flex-grow: 1;
+      padding: 20px;
+      overflow-x: hidden;
+      width: calc(100% - 80px);
+    }
+    
+    .region-buttons {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    
+    .region-button {
+      padding: 10px 20px;
+      border: 1px solid #444;
+      border-radius: 5px;
+      background-color: #2b2b2b;
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .region-button.active {
+      border-color: #4caf50;
+      background-color: #4caf50;
+      color: white;
+    }
+    
+    .region-button span {
+      margin-left: 5px;
+      font-size: 14px;
+    }
+    
+    .ranked-list {
+      background-color: #2b2b2b;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+    }
+    
+    .team-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #444;
+    }
+    
+    .team-item:last-child {
+      border-bottom: none;
+    }
+    
+    .team-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .team-info img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+    }
+    
+    .team-info .details {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .team-info .details .team-name {
+      font-weight: bold;
+      color: #fff;
+    }
+    
+    .team-info .details .country {
+      font-size: 12px;
+      color: #bbb;
+    }
+    
+    .rating {
+      font-weight: bold;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <!-- When "Home" is clicked, call redirectHome to trigger the animation and redirect -->
+    <a href="front.html" onclick="redirectWithFade(event, 'index.html')">
+      <img src="https://via.placeholder.com/24" alt="Home">
+      Home
+    </a>
+    <a href="#" onclick="setActiveSidebarButton(this)">
+      <img src="https://via.placeholder.com/24" alt="Match List">
+      Match List
+    </a>
+    <a href="#" class="active" onclick="setActiveSidebarButton(this)">
+      <img src="https://via.placeholder.com/24" alt="Teams and Players">
+      Teams and Players
+    </a>
+    <a href="#" onclick="setActiveSidebarButton(this)">
+      <img src="https://via.placeholder.com/24" alt="Forums">
+      Forums
+    </a>
+  </div>
+
+  <div class="main-content fade-container fade-in">
+    <div class="region-buttons">
+      <div class="region-button" onclick="showRankedList('amer', this)">AMER</div>
+      <div class="region-button active" onclick="showRankedList('emea', this)">EMEA<span>&#x2713;</span></div>
+      <div class="region-button" onclick="showRankedList('cn', this)">CN</div>
+      <div class="region-button" onclick="showRankedList('apac', this)">APAC</div>
+    </div>
+
+    <div class="ranked-list" id="ranked-list">
+      <!-- Default list for EMEA -->
+      <div class="team-item">
+        <div class="team-info">
+          <img src="https://via.placeholder.com/40" alt="Team logo">
+          <div class="details">
+            <span class="team-name">Team Heretics</span>
+            <span class="country">Spain</span>
+          </div>
+        </div>
+        <div class="rating">2000</div>
+      </div>
+      <div class="team-item">
+        <div class="team-info">
+          <img src="https://via.placeholder.com/40" alt="Team logo">
+          <div class="details">
+            <span class="team-name">Team Vitality</span>
+            <span class="country">France</span>
+          </div>
+        </div>
+        <div class="rating">1972</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const rankedLists = {
+      amer: [
+        { name: "Sentinels", country: "USA", rating: 1950 },
+        { name: "LOUD", country: "Brazil", rating: 1935 }
+      ],
+      emea: [
+        { name: "Team Heretics", country: "Spain", rating: 2000 },
+        { name: "Team Vitality", country: "France", rating: 1972 }
+      ],
+      cn: [
+        { name: "Edward Gaming", country: "China", rating: 1900 },
+        { name: "FunPlus Phoenix", country: "China", rating: 1885 }
+      ],
+      apac: [
+        { name: "Paper Rex", country: "Singapore", rating: 1940 },
+        { name: "Talon Esports", country: "Thailand", rating: 1925 }
+      ]
+    };
+
+    function showRankedList(region, button) {
+      const buttons = document.querySelectorAll('.region-button');
+      buttons.forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.querySelector('span')) {
+          btn.querySelector('span').remove();
+        }
+      });
+
+      button.classList.add('active');
+      const checkmark = document.createElement('span');
+      checkmark.innerHTML = '&#x2713;';
+      button.appendChild(checkmark);
+
+      const listContainer = document.getElementById('ranked-list');
+      listContainer.innerHTML = '';
+
+      rankedLists[region].forEach(team => {
+        const teamItem = document.createElement('div');
+        teamItem.classList.add('team-item');
+
+        teamItem.innerHTML = `
+          <div class="team-info">
+            <img src="https://via.placeholder.com/40" alt="Team logo">
+            <div class="details">
+              <span class="team-name">${team.name}</span>
+              <span class="country">${team.country}</span>
+            </div>
+          </div>
+          <div class="rating">${team.rating}</div>
+        `;
+
+        listContainer.appendChild(teamItem);
+      });
+    }
+
+    function setActiveSidebarButton(button) {
+      const links = document.querySelectorAll('.sidebar a');
+      links.forEach(link => link.classList.remove('active'));
+      button.classList.add('active');
+    }
+
+    function redirectWithFade(event, destination) {
+      event.preventDefault(); // Prevent immediate navigation
+      // Add the fade-out class to the main content container (not the sidebar)
+      const fadeContainer = document.querySelector('.fade-container');
+      fadeContainer.classList.remove('fade-in');
+      fadeContainer.classList.add('fade-out');
+      setTimeout(() => {
+        window.location.href = destination;
+      }, 500); // Delay matches the fade-out duration (0.5s)
+    }
+  </script>
+</body>
+</html>

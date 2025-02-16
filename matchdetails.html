@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Match Details</title>
+  <style>
+    /* Add your styles here, similar to your previous page */
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #1e1e1e;
+      color: #e0e0e0;
+      padding: 20px;
+    }
+    .match-details {
+      background-color: #2b2b2b;
+      padding: 20px;
+      border-radius: 10px;
+      margin-top: 20px;
+    }
+    h1 {
+      margin: 0;
+    }
+    .back-button {
+      background-color: #4caf50;
+      color: white;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    .back-button:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Match Details</h1>
+  <div class="match-details" id="match-details">
+    <!-- Match details will be inserted here -->
+  </div>
+  
+  <button class="back-button" onclick="window.history.back()">Back</button>
+
+  <script>
+    // Fetch the match ID from the URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const matchId = urlParams.get('match-id');
+
+    // Display match details based on the matchId
+    const matchDetails = document.getElementById('match-details');
+
+    // Sample data - In real scenarios, you could fetch this data from an API or database
+    const matches = {
+      1: { name: "Match 1", date: "August 17, 2025", teams: ["Team A", "Team B"], location: "Stadium X", result: "2-1" },
+      2: { name: "Match 2", date: "August 17, 2025", teams: ["Team C", "Team D"], location: "Stadium Y", result: "3-0" },
+      3: { name: "Match 3", date: "August 18, 2025", teams: ["Team E", "Team F"], location: "Stadium Z", result: "1-1" },
+      4: { name: "Match 4", date: "August 19, 2025", teams: ["Team G", "Team H"], location: "Stadium W", result: "0-2" }
+    };
+
+    // Get the match data using the matchId
+    const match = matches[matchId];
+
+    if (match) {
+      // Display match details
+      matchDetails.innerHTML = `
+        <h2>${match.name}</h2>
+        <p><strong>Date:</strong> ${match.date}</p>
+        <p><strong>Teams:</strong> ${match.teams.join(" vs ")}</p>
+        <p><strong>Location:</strong> ${match.location}</p>
+        <p><strong>Result:</strong> ${match.result}</p>
+      `;
+    } else {
+      matchDetails.innerHTML = "<p>Match not found.</p>";
+    }
+  </script>
+
+</body>
+</html>

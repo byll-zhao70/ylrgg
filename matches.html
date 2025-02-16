@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Match List</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* Global styles */
+    body {
+      display: flex;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      height: 100vh;
+      background-color: #1e1e1e;
+      color: #e0e0e0;
+    }
+
+    /* Sidebar styles */
+    .sidebar {
+      width: 80px;
+      background-color: #151515;
+      color: white;
+      padding: 10px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: fixed;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .sidebar a {
+      text-decoration: none;
+      color: white;
+      margin: 10px 0;
+      padding: 10px 0;
+      width: 100%;
+      text-align: center;
+      border-radius: 5px;
+      transition: background-color 0.3s, transform 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .sidebar a img {
+      width: 24px;
+      height: 24px;
+      margin-bottom: 5px;
+    }
+
+    .sidebar a:hover {
+      background-color: #444;
+      transform: scale(1.05);
+    }
+
+    .sidebar a.active {
+      background-color: #4caf50;
+    }
+
+    /* Main content area */
+    .main-content {
+      flex-grow: 1;
+      padding: 20px;
+      overflow-x: hidden;
+      width: calc(100% - 80px);
+      margin-left: 80px;
+    }
+
+    /* Calendar styling */
+    .calendar-container {
+      background-color: #2b2b2b;
+      padding: 15px;
+      border-radius: 10px;
+      width: 300px;
+    }
+
+    .calendar input {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      background-color: #444;
+      color: white;
+    }
+
+    .clear-btn {
+      background-color: #d32f2f;
+      color: white;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      width: 100%;
+      margin-top: 10px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .clear-btn:hover {
+      background-color: #c62828;
+    }
+
+    /* Match list styling */
+    .match-list {
+      margin-top: 20px;
+    }
+
+    .match {
+      background-color: #2b2b2b;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .match:hover {
+      background-color: #444;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar with navigation links -->
+  <div class="sidebar">
+    <a href="index.html">
+      <img src="vlr.png" alt="Home">
+      Home
+    </a>
+    <a href="matches.html" class="active">
+      <img src="vlr.png" alt="Match List">
+      Match List
+    </a>
+    <a href="teams.html">
+      <img src="vlr.png" alt="Teams and Players">
+      Teams and Players
+    </a>
+    <a href="forums.html">
+      <img src="vlr.png" alt="Forums">
+      Forums
+    </a>
+  </div>
+
+  <!-- Main content -->
+  <div class="main-content">
+    <h1>Match List</h1>
+
+    <!-- Calendar Picker -->
+    <div class="calendar-container">
+      <label for="match-date">Select a Date:</label>
+      <input type="date" id="match-date" onchange="filterMatches()">
+    </div>
+
+<!-- Matches -->
+<div class="match-list" id="match-list">
+  <div class="match" data-id="1" data-date="2025-08-17" onclick="goToMatchDetails(1)">Match 1 - August 17, 2025</div>
+  <div class="match" data-id="2" data-date="2025-08-17" onclick="goToMatchDetails(2)">Match 2 - August 17, 2025</div>
+  <div class="match" data-id="3" data-date="2025-08-18" onclick="goToMatchDetails(3)">Match 3 - August 18, 2025</div>
+  <div class="match" data-id="4" data-date="2025-08-19" onclick="goToMatchDetails(4)">Match 4 - August 19, 2025</div>
+</div>
+
+  </div>
+
+  <script>
+    function goToMatchDetails(matchId) {
+  // Redirect to the match details page with the match-id
+  window.location.href = `matchdetails.html?match-id=${matchId}`;
+}
+
+    function filterMatches() {
+      const selectedDate = document.getElementById("match-date").value;
+      const matches = document.querySelectorAll(".match");
+
+      matches.forEach(match => {
+        match.style.display = match.getAttribute("data-date") === selectedDate || selectedDate === "" ? "block" : "none";
+      });
+    }
+
+    function clearFilter() {
+      document.getElementById("match-date").value = "";
+      filterMatches();
+    }
+  </script>
+
+</body>
+</html>

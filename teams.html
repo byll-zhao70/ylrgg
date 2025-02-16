@@ -190,10 +190,17 @@
 
   <div class="main-content fade-container fade-in">
     <div class="region-buttons">
-      <div class="region-button" onclick="showRankedList('amer', this)">AMER</div>
-      <div class="region-button active" onclick="showRankedList('emea', this)">EMEA<span>&#x2713;</span></div>
-      <div class="region-button" onclick="showRankedList('cn', this)">CN</div>
-      <div class="region-button" onclick="showRankedList('apac', this)">APAC</div>
+      <div class="region-button" onclick="showRankedList('na', this)">NA</div>
+      <div class="region-button active" onclick="showRankedList('eu', this)">EU<span>&#x2713;</span></div>
+      <div class="region-button" onclick="showRankedList('br', this)">BR</div>
+      <div class="region-button" onclick="showRankedList('ap', this)">AP</div>
+      <div class="region-button" onclick="showRankedList('kr', this)">KR</div>
+      <div class="region-button" onclick="showRankedList('ch', this)">CH</div>
+      <div class="region-button" onclick="showRankedList('jp', this)">JP</div>
+      <div class="region-button" onclick="showRankedList('lan', this)">LAN</div>
+      <div class="region-button" onclick="showRankedList('las', this)">LAS</div>
+      <div class="region-button" onclick="showRankedList('oce', this)">OCE</div>
+      <div class="region-button" onclick="showRankedList('gc', this)">GC</div>
     </div>
 
     <div class="ranked-list" id="ranked-list">
@@ -222,61 +229,6 @@
   </div>
 
   <script>
-    const rankedLists = {
-      amer: [
-        { name: "Sentinels", country: "USA", rating: 1950 },
-        { name: "LOUD", country: "Brazil", rating: 1935 }
-      ],
-      emea: [
-        { name: "Team Heretics", country: "Spain", rating: 2000 },
-        { name: "Team Vitality", country: "France", rating: 1972 }
-      ],
-      cn: [
-        { name: "Edward Gaming", country: "China", rating: 1900 },
-        { name: "FunPlus Phoenix", country: "China", rating: 1885 }
-      ],
-      apac: [
-        { name: "Paper Rex", country: "Singapore", rating: 1940 },
-        { name: "Talon Esports", country: "Thailand", rating: 1925 }
-      ]
-    };
-
-    function showRankedList(region, button) {
-      const buttons = document.querySelectorAll('.region-button');
-      buttons.forEach(btn => {
-        btn.classList.remove('active');
-        if (btn.querySelector('span')) {
-          btn.querySelector('span').remove();
-        }
-      });
-
-      button.classList.add('active');
-      const checkmark = document.createElement('span');
-      checkmark.innerHTML = '&#x2713;';
-      button.appendChild(checkmark);
-
-      const listContainer = document.getElementById('ranked-list');
-      listContainer.innerHTML = '';
-
-      rankedLists[region].forEach(team => {
-        const teamItem = document.createElement('div');
-        teamItem.classList.add('team-item');
-
-        teamItem.innerHTML = `
-          <div class="team-info">
-            <img src="vlr.png" alt="Team logo">
-            <div class="details">
-              <span class="team-name">${team.name}</span>
-              <span class="country">${team.country}</span>
-            </div>
-          </div>
-          <div class="rating">${team.rating}</div>
-        `;
-
-        listContainer.appendChild(teamItem);
-      });
-    }
-
     function setActiveSidebarButton(button) {
       const links = document.querySelectorAll('.sidebar a');
       links.forEach(link => link.classList.remove('active'));
@@ -294,5 +246,6 @@
       }, 500); // Delay matches the fade-out duration (0.5s)
     }
   </script>
+  <script src="script.js"></script>
 </body>
 </html>

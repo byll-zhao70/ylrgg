@@ -45,37 +45,42 @@
   <button class="back-button" onclick="window.history.back()">Back</button>
 
   <script>
-    // Fetch the match ID from the URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const matchId = urlParams.get('match-id');
-
-    // Display match details based on the matchId
-    const matchDetails = document.getElementById('match-details');
-
-    // Sample data - In real scenarios, you could fetch this data from an API or database
-    const matches = {
-      1: { name: "Match 1", date: "August 17, 2025", teams: ["Team A", "Team B"], location: "Stadium X", result: "2-1" },
-      2: { name: "Match 2", date: "August 17, 2025", teams: ["Team C", "Team D"], location: "Stadium Y", result: "3-0" },
-      3: { name: "Match 3", date: "August 18, 2025", teams: ["Team E", "Team F"], location: "Stadium Z", result: "1-1" },
-      4: { name: "Match 4", date: "August 19, 2025", teams: ["Team G", "Team H"], location: "Stadium W", result: "0-2" }
-    };
-
-    // Get the match data using the matchId
-    const match = matches[matchId];
-
-    if (match) {
-      // Display match details
-      matchDetails.innerHTML = `
-        <h2>${match.name}</h2>
-        <p><strong>Date:</strong> ${match.date}</p>
-        <p><strong>Teams:</strong> ${match.teams.join(" vs ")}</p>
-        <p><strong>Location:</strong> ${match.location}</p>
-        <p><strong>Result:</strong> ${match.result}</p>
-      `;
-    } else {
-      matchDetails.innerHTML = "<p>Match not found.</p>";
+    async function fetchMatchDetails() {
+      // Get match-id from URL query string
+      const urlParams = new URLSearchParams(window.location.search);
+      const matchId = urlParams.get('match-id');
+  
+      if (!matchId) {
+        document.getElementById('match-details').innerHTML = "<p>Match not found.</p>";
+        return;
+      }
+  
+      try {
+        // Fetch match data based on match-id
+        const response = await fetch(`https://vlr.orlandomm.net/api/v1/matches`);
+        const data = await response.json();
+  
+        const match = data.data.find(match => match.id === matchId);
+        if (match) {
+          // Populate match details
+          document.getElementById('match-details').innerHTML = `
+            <h2>${match.event} - ${match.tournament}</h2>
+            <p><strong>Teams:</strong> ${match.teams[0].name} vs ${match.teams[1].name}</p>
+            <p><strong>Time:</strong> ${match.in}</p>
+            <p><strong>Status:</strong> ${match.status}</p>
+            <p><strong>Location:</strong> ${match.location || "Not available"}</p>
+          `;
+        } else {
+          document.getElementById('match-details').innerHTML = "<p>Match not found.</p>";
+        }
+      } catch (error) {
+        console.error('Error fetching match details:', error);
+        document.getElementById('match-details').innerHTML = "<p>Match not found.</p>";
+      }
     }
+  
+    // Fetch match details on page load
+    window.onload = fetchMatchDetails;
   </script>
-
 </body>
 </html>

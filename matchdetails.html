@@ -56,23 +56,42 @@
       }
   
       try {
-        // Fetch match data based on match-id
-        const response = await fetch(`https://vlr.orlandomm.net/api/v1/matches`);
-        const data = await response.json();
+        // First try to fetch upcoming match data
+        const responseUpcoming = await fetch(`https://vlr.orlandomm.net/api/v1/matches`);
+        const dataUpcoming = await responseUpcoming.json();
+        const matchUpcoming = dataUpcoming.data.find(match => match.id === matchId);
   
-        const match = data.data.find(match => match.id === matchId);
-        if (match) {
-          // Populate match details
+        if (matchUpcoming) {
+          // Populate match details for upcoming match
           document.getElementById('match-details').innerHTML = `
-            <h2>${match.event} - ${match.tournament}</h2>
-            <p><strong>Teams:</strong> ${match.teams[0].name} vs ${match.teams[1].name}</p>
-            <p><strong>Time:</strong> ${match.in}</p>
-            <p><strong>Status:</strong> ${match.status}</p>
-            <p><strong>Location:</strong> ${match.location || "Not available"}</p>
+            <h2>${matchUpcoming.event} - ${matchUpcoming.tournament}</h2>
+            <p><strong>Teams:</strong> ${matchUpcoming.teams[0].name} vs ${matchUpcoming.teams[1].name}</p>
+            <p><strong>Time:</strong> ${matchUpcoming.in}</p>
+            <p><strong>Status:</strong> ${matchUpcoming.status}</p>
+            <p><strong>Location:</strong> ${matchUpcoming.location || "Not available"}</p>
           `;
-        } else {
-          document.getElementById('match-details').innerHTML = "<p>Match not found.</p>";
+          return;  // Exit function after finding the match in the upcoming matches
         }
+  
+        // If not found in upcoming matches, try fetching completed match data
+        const responseCompleted = await fetch(`https://vlr.orlandomm.net/api/v1/results?page=1`);
+        const dataCompleted = await responseCompleted.json();
+        const matchCompleted = dataCompleted.data.find(match => match.id === matchId);
+  
+        if (matchCompleted) {
+          // Populate match details for completed match
+          document.getElementById('match-details').innerHTML = `
+            <h2>${matchCompleted.event} - ${matchCompleted.tournament}</h2>
+            <p><strong>Teams:</strong> ${matchCompleted.teams[0].name} vs ${matchCompleted.teams[1].name}</p>
+            <p><strong>Result:</strong> ${matchCompleted.teams[0].score} - ${matchCompleted.teams[1].score}</p>
+            <p><strong>Status:</strong> ${matchCompleted.status}</p>
+            <p><strong>Time:</strong> ${matchCompleted.ago}</p>
+          `;
+          return;  // Exit function after finding the match in completed matches
+        }
+  
+        // If not found in either upcoming or completed matches
+        document.getElementById('match-details').innerHTML = "<p>Match not found.</p>";
       } catch (error) {
         console.error('Error fetching match details:', error);
         document.getElementById('match-details').innerHTML = "<p>Match not found.</p>";
@@ -82,5 +101,6 @@
     // Fetch match details on page load
     window.onload = fetchMatchDetails;
   </script>
+
 </body>
 </html>

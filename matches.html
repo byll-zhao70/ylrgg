@@ -86,20 +86,22 @@
       color: white;
     }
 
-    .clear-btn {
-      background-color: #d32f2f;
+    /* Filter Buttons */
+    .filter-btn {
+      background-color: #4caf50;
       color: white;
-      padding: 10px;
+      padding: 5px 15px;  /* Smaller padding */
       border: none;
       border-radius: 5px;
-      width: 100%;
-      margin-top: 10px;
+      margin: 5px 0; /* Adjusted margin for smaller spacing */
       cursor: pointer;
+      width: auto; /* Allow button to auto size based on content */
       transition: background-color 0.3s;
+      font-size: 14px; /* Smaller font size */
     }
 
-    .clear-btn:hover {
-      background-color: #c62828;
+    .filter-btn:hover {
+      background-color: #388e3c;
     }
 
     /* Match list styling */
@@ -147,56 +149,34 @@
   <div class="main-content">
     <h1>Match List</h1>
 
-    <!-- Calendar Picker -->
+    <!-- Filter for Date and Buttons for Match Types -->
     <div class="calendar-container">
       <label for="match-date">Select a Date:</label>
       <input type="date" id="match-date" onchange="filterMatches()">
     </div>
 
-<!-- Matches -->
-<div class="match-list" id="match-list">
-  <div class="match" data-id="1" data-date="2025-08-17" onclick="goToMatchDetails(1)">Match 1 - August 17, 2025</div>
-  <div class="match" data-id="2" data-date="2025-08-17" onclick="goToMatchDetails(2)">Match 2 - August 17, 2025</div>
-  <div class="match" data-id="3" data-date="2025-08-18" onclick="goToMatchDetails(3)">Match 3 - August 18, 2025</div>
-  <div class="match" data-id="4" data-date="2025-08-19" onclick="goToMatchDetails(4)">Match 4 - August 19, 2025</div>
-</div>
+    <button class="filter-btn" onclick="fetchUpcomingMatches()">Upcoming Matches</button>
+    <button class="filter-btn" onclick="fetchCompletedMatches()">Completed Matches</button>
 
+    <!-- Matches -->
+    <div class="match-list" id="match-list"></div>
   </div>
 
   <script>
-    function goToMatchDetails(matchId) {
-  // Redirect to the match details page with the match-id
-  window.location.href = `matchdetails.html?match-id=${matchId}`;
-}
-
-    function filterMatches() {
-      const selectedDate = document.getElementById("match-date").value;
-      const matches = document.querySelectorAll(".match");
-
-      matches.forEach(match => {
-        match.style.display = match.getAttribute("data-date") === selectedDate || selectedDate === "" ? "block" : "none";
-      });
-    }
-
-    function clearFilter() {
-      document.getElementById("match-date").value = "";
-      filterMatches();
-    }
-  </script>
-  <script>
-    async function fetchMatches() {
+    // Function to fetch upcoming matches
+    async function fetchUpcomingMatches() {
       try {
         const response = await fetch('https://vlr.orlandomm.net/api/v1/matches');
         const data = await response.json();
         const matchList = document.getElementById('match-list');
         matchList.innerHTML = ''; // Clear the existing matches
-  
+
         data.data.forEach(match => {
           const matchElement = document.createElement('div');
           matchElement.classList.add('match');
           matchElement.setAttribute('data-id', match.id);
           matchElement.setAttribute('data-date', match.in);
-  
+
           const matchContent = `
             <div><strong>${match.event}</strong> - ${match.tournament}</div>
             <div>${match.teams[0].name} vs ${match.teams[1].name}</div>
@@ -210,16 +190,58 @@
           matchList.appendChild(matchElement);
         });
       } catch (error) {
-        console.error('Error fetching matches:', error);
+        console.error('Error fetching upcoming matches:', error);
       }
     }
-  
+
+    // Function to fetch completed matches
+    async function fetchCompletedMatches() {
+      try {
+        const response = await fetch('https://vlr.orlandomm.net/api/v1/results?page=1');
+        const data = await response.json();
+        const matchList = document.getElementById('match-list');
+        matchList.innerHTML = ''; // Clear the existing matches
+
+        data.data.forEach(match => {
+          const matchElement = document.createElement('div');
+          matchElement.classList.add('match');
+          matchElement.setAttribute('data-id', match.id);
+
+          const matchContent = `
+            <div><strong>${match.event}</strong> - ${match.tournament}</div>
+            <div>${match.teams[0].name} vs ${match.teams[1].name}</div>
+            <div>Status: ${match.status}</div>
+            <div>Result: ${match.teams[0].score} - ${match.teams[1].score}</div>
+            <div>Time: ${match.ago}</div>
+          `;
+          
+          matchElement.innerHTML = matchContent;
+          matchElement.setAttribute('onclick', `goToMatchDetails('${match.id}')`);
+          
+          matchList.appendChild(matchElement);
+        });
+      } catch (error) {
+        console.error('Error fetching completed matches:', error);
+      }
+    }
+
+    // Function to navigate to the match details page
     function goToMatchDetails(matchId) {
       window.location.href = `matchdetails.html?match-id=${matchId}`;
     }
-  
-    // Fetch the matches when the page loads
-    window.onload = fetchMatches;
+
+    // Filter matches based on the selected date
+    function filterMatches() {
+      const selectedDate = document.getElementById("match-date").value;
+      const matches = document.querySelectorAll(".match");
+
+      matches.forEach(match => {
+        match.style.display = match.getAttribute("data-date") === selectedDate || selectedDate === "" ? "block" : "none";
+      });
+    }
+
+    // Fetch upcoming matches by default when the page loads
+    window.onload = fetchUpcomingMatches;
   </script>
 
 </body>

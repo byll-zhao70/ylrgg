@@ -178,6 +178,7 @@
           matchElement.setAttribute('data-date', match.in);
 
           const matchContent = `
+            <img src=${match.img} width="60" height="60" align="left" alt="match logo">
             <div><strong>${match.event}</strong> - ${match.tournament}</div>
             <div>${match.teams[0].name} vs ${match.teams[1].name}</div>
             <div>Status: ${match.status}</div>

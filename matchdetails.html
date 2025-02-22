@@ -64,6 +64,7 @@
         if (match) {
           // Populate match details
           document.getElementById('match-details').innerHTML = `
+            <img src=${match.img} width = "70" height = "70" alt="Match logo">
             <h2>${match.event} - ${match.tournament}</h2>
             <p><strong>Teams:</strong> ${match.teams[0].name} vs ${match.teams[1].name}</p>
             <p><strong>Time:</strong> ${match.in}</p>

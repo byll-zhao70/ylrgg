@@ -1,6 +1,8 @@
 // URL of the initial API request (replace with the actual URL)
 const apiUrl = 'https://vlr.orlandomm.net/api/v1/teams';
 
+let currentRegion = 'na';
+
 let rankedLists = {
     na: [
       { name: "Sentinels", country: "USA", rating: 1950 },
@@ -78,12 +80,14 @@ async function getAllTeams() {
     try {
         for (let region in regions) {
             const info = await getAllTeamsByRegion(regions[region]);
-            teamMap[regions[region]] = info;
+            rankedLists[regions[region]] = info;
+            if(regions[region] === currentRegion){
+              showRankedList(currentRegion, document.getElementById(currentRegion));
+            }
         }
     } catch(error) {
         console.error('Error Fetching teams:', error);
     }
-    return teamMap;
 }
 
 // Function to convert team data 
@@ -92,7 +96,7 @@ async function getAllTeams() {
 async function getAndDisplayTeams() {
     try {
         // Get all teams from all pages
-        const teams = await getAllTeams();
+        await getAllTeams();
         
         // Get the container where the teams will be displayed
         //const container = document.getElementById('teams-container');
@@ -106,9 +110,6 @@ async function getAndDisplayTeams() {
         //    return;
         //}
         
-        rankedLists = teams
-
-        console.log(teams['na'])
 
         // Default Functionality for Base Region 
 
@@ -176,6 +177,7 @@ async function getAndDisplayTeams() {
 }
 
 function showRankedList(region, button) {
+    currentRegion = button.id
     const buttons = document.querySelectorAll('.region-button');
     buttons.forEach(btn => {
       btn.classList.remove('active');
@@ -184,7 +186,6 @@ function showRankedList(region, button) {
       }
     });
 
-    console.log(rankedLists[region]);
 
     button.classList.add('active');
     const checkmark = document.createElement('span');
@@ -193,25 +194,35 @@ function showRankedList(region, button) {
 
     const listContainer = document.getElementById('ranked-list');
     listContainer.innerHTML = '';
+    const spinner = document.getElementById('loading-spinner');
 
-    rankedLists[region].forEach(team => {
-      const teamItem = document.createElement('div');
-      teamItem.classList.add('team-item');
-
-      teamItem.innerHTML = `
-        <div class="team-info">
-          <img src=${team.img} alt="Team logo">
-          <div class="details">
-            <span class="team-name">${team.name}</span>
-            <span class="country">${team.country}</span>
+    if(rankedLists[region].length == 2){
+      //spinner
+      spinner.style.display = 'block';
+    }
+    else{
+      spinner.style.display = 'none';
+      rankedLists[region].forEach(team => {
+        const teamItem = document.createElement('div');
+        teamItem.classList.add('team-item');
+  
+        teamItem.innerHTML = `
+          <div class="team-info">
+            <img src=${team.img} alt="Team logo">
+            <div class="details">
+              <span class="team-name">${team.name}</span>
+              <span class="country">${team.country}</span>
+            </div>
           </div>
-        </div>
-        <div class="rating">${team.id}</div>
-      `;
+          <div class="rating">${team.id}</div>
+        `;
+  
+        listContainer.appendChild(teamItem);
+      });
+    }
 
-      listContainer.appendChild(teamItem);
-    });
   }
 
 // Call the function when the page loads
 window.addEventListener('load', getAndDisplayTeams);
+showRankedList(currentRegion, document.getElementById(currentRegion));

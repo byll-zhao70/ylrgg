@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Team Details</title>
+  <style>
+    /* Copy of styling from teams.html */
+    body {
+      display: flex;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      height: 100vh;
+      background-color: #1e1e1e;
+      color: #e0e0e0;
+    }
+    .fade-container {
+      transition: opacity 0.5s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .fade-in {
+      animation: fadeIn 0.5s forwards;
+    }
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+    .fade-out {
+      animation: fadeOut 0.5s forwards;
+    }
+    .sidebar {
+      width: 80px;
+      background-color: #151515;
+      color: white;
+      padding: 10px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .sidebar a {
+      text-decoration: none;
+      color: white;
+      margin: 10px 0;
+      padding: 10px 0;
+      width: 100%;
+      text-align: center;
+      border-radius: 5px;
+      transition: background-color 0.3s, transform 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .sidebar a img {
+      width: 24px;
+      height: 24px;
+      margin-bottom: 5px;
+    }
+    .sidebar a:hover {
+      background-color: #444;
+      transform: scale(1.05);
+    }
+    .sidebar a.active {
+      background-color: #4caf50;
+    }
+    .main-content {
+      flex-grow: 1;
+      padding: 20px;
+      overflow-x: hidden;
+      width: calc(100% - 80px);
+    }
+    /* Custom styles for team details */
+    .team-details-section {
+      margin-bottom: 20px;
+    }
+    .team-details-section h2 {
+      margin-bottom: 10px;
+    }
+    .team-info {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .team-info img {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+    }
+    .list-item {
+      padding: 10px;
+      border-bottom: 1px solid #444;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
+    .list-item img {
+      width: 40px;
+      height: 40px;
+      margin-right: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <a href="#" onclick="redirectWithFade(event, 'index.html')">
+      <img src="vlr.png" alt="Home">
+      Home
+    </a>
+    <a href="#" onclick="redirectWithFade(event, 'matches.html')">
+      <img src="vlr.png" alt="Match List">
+      Match List  
+    </a>
+    <a href="#" class="active" onclick="redirectWithFade(event, 'teams.html')">
+      <img src="vlr.png" alt="Teams and Players">
+      Teams and Players
+    </a>
+    <a href="#" onclick="setActiveSidebarButton(this)">
+      <img src="vlr.png" alt="Forums">
+      Forums
+    </a>
+  </div>
+
+  <div class="main-content fade-container fade-in">
+    <div id="team-details">
+      <!-- Team details will be injected here -->
+      <p>Loading team details...</p>
+    </div>
+  </div>
+
+  <script>
+    // Sidebar helper functions
+    function setActiveSidebarButton(button) {
+      const links = document.querySelectorAll('.sidebar a');
+      links.forEach(link => link.classList.remove('active'));
+      button.classList.add('active');
+    }
+
+    function redirectWithFade(event, destination) {
+      event.preventDefault();
+      const fadeContainer = document.querySelector('.fade-container');
+      fadeContainer.classList.remove('fade-in');
+      fadeContainer.classList.add('fade-out');
+      setTimeout(() => {
+        window.location.href = destination;
+      }, 500);
+    }
+
+    // Helper to get query parameters from the URL
+    function getQueryParam(param) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(param);
+    }
+
+    // Fetch team details from the API using the team id
+    async function fetchTeamDetails(teamId) {
+      try {
+        const response = await fetch(`https://vlr.orlandomm.net/api/v1/teams/${teamId}`);
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return await response.json();
+      } catch (error) {
+        console.error('Error fetching team details:', error);
+        return null;
+      }
+    }
+
+    // Create a clickable list item with an optional image
+    function createClickableListItem(text, imgSrc) {
+      const item = document.createElement('div');
+      item.classList.add('list-item');
+      if (imgSrc) {
+        const img = document.createElement('img');
+        img.src = imgSrc;
+        img.alt = text;
+        item.appendChild(img);
+      }
+      const span = document.createElement('span');
+      span.textContent = text;
+      item.appendChild(span);
+      // Placeholder click event – adjust as needed later
+      item.addEventListener('click', () => {
+        console.log('Clicked on:', text);
+      });
+      return item;
+    }
+
+    function createClickableListItem(text, imgSrc, onClickCallback) {
+        const item = document.createElement('div');
+        item.classList.add('list-item');
+        if (imgSrc) {
+            const img = document.createElement('img');
+            img.src = imgSrc;
+            img.alt = text;
+            item.appendChild(img);
+        }
+        const span = document.createElement('span');
+        span.textContent = text;
+        item.appendChild(span);
+        if (onClickCallback) {
+            item.addEventListener('click', onClickCallback);
+        } else {
+            item.addEventListener('click', () => {
+            console.log('Clicked on:', text);
+            });
+        }
+        return item;
+    }
+
+    // Display team details in the page
+    function displayTeamDetails(data) {
+      const container = document.getElementById('team-details');
+      container.innerHTML = '';
+
+      // Team Info
+      const teamInfoSection = document.createElement('div');
+      teamInfoSection.classList.add('team-details-section');
+      teamInfoSection.innerHTML = `
+        <div class="team-info">
+          <img src="${data.data.info.logo}" alt="Team Logo">
+          <div>
+            <h1>${data.data.info.name}</h1>
+            <p>Tag: ${data.data.info.tag}</p>
+          </div>
+        </div>
+      `;
+      container.appendChild(teamInfoSection);
+
+      // Players Section
+      if (data.data.players && data.data.players.length > 0) {
+        const playersSection = document.createElement('div');
+        playersSection.classList.add('team-details-section');
+        const playersHeader = document.createElement('h2');
+        playersHeader.textContent = 'Players';
+        playersSection.appendChild(playersHeader);
+        data.data.players.forEach(player => {
+            const item = createClickableListItem(player.name, player.img, () => {
+            // Redirect to player.html with the player's id as a query parameter
+            window.location.href = `player.html?playerid=${player.id}`;
+            });
+            playersSection.appendChild(item);
+        });
+        container.appendChild(playersSection);
+      }
+
+      // Events Section
+      if (data.data.events && data.data.events.length > 0) {
+        const eventsSection = document.createElement('div');
+        eventsSection.classList.add('team-details-section');
+        const eventsHeader = document.createElement('h2');
+        eventsHeader.textContent = 'Events';
+        eventsSection.appendChild(eventsHeader);
+        data.data.events.forEach(event => {
+          const item = createClickableListItem(`${event.name} (${event.year})`);
+          eventsSection.appendChild(item);
+        });
+        container.appendChild(eventsSection);
+      }
+
+      // Results Section
+      if (data.data.results && data.data.results.length > 0) {
+        const resultsSection = document.createElement('div');
+        resultsSection.classList.add('team-details-section');
+        const resultsHeader = document.createElement('h2');
+        resultsHeader.textContent = 'Results';
+        resultsSection.appendChild(resultsHeader);
+        data.data.results.forEach(result => {
+          const item = createClickableListItem(result.event.name, result.event.logo);
+          resultsSection.appendChild(item);
+        });
+        container.appendChild(resultsSection);
+      }
+
+      // Upcoming Matches Section
+      if (data.data.upcoming && data.data.upcoming.length > 0) {
+        const upcomingSection = document.createElement('div');
+        upcomingSection.classList.add('team-details-section');
+        const upcomingHeader = document.createElement('h2');
+        upcomingHeader.textContent = 'Upcoming Matches';
+        upcomingSection.appendChild(upcomingHeader);
+        data.data.upcoming.forEach(match => {
+          const item = createClickableListItem(match.event.name, match.event.logo);
+          upcomingSection.appendChild(item);
+        });
+        container.appendChild(upcomingSection);
+      }
+    }
+
+    // On page load, fetch and display team details based on the team id in the URL
+    window.addEventListener('load', async () => {
+      const teamId = getQueryParam('teamid');
+      if (!teamId) {
+        document.getElementById('team-details').innerHTML = '<p>Error: Team ID not provided.</p>';
+        return;
+      }
+      const teamData = await fetchTeamDetails(teamId);
+      if (teamData) {
+        displayTeamDetails(teamData);
+      } else {
+        document.getElementById('team-details').innerHTML = '<p>Error loading team details.</p>';
+      }
+    });
+  </script>
+</body>
+</html>

@@ -177,51 +177,54 @@ async function getAndDisplayTeams() {
 }
 
 function showRankedList(region, button) {
-    currentRegion = button.id
-    const buttons = document.querySelectorAll('.region-button');
-    buttons.forEach(btn => {
-      btn.classList.remove('active');
-      if (btn.querySelector('span')) {
-        btn.querySelector('span').remove();
-      }
-    });
-
-
-    button.classList.add('active');
-    const checkmark = document.createElement('span');
-    checkmark.innerHTML = '&#x2713;';
-    button.appendChild(checkmark);
-
-    const listContainer = document.getElementById('ranked-list');
-    listContainer.innerHTML = '';
-    const spinner = document.getElementById('loading-spinner');
-
-    if(rankedLists[region].length == 2){
-      //spinner
-      spinner.style.display = 'block';
+  currentRegion = button.id;
+  const buttons = document.querySelectorAll('.region-button');
+  buttons.forEach(btn => {
+    btn.classList.remove('active');
+    if (btn.querySelector('span')) {
+      btn.querySelector('span').remove();
     }
-    else{
-      spinner.style.display = 'none';
-      rankedLists[region].forEach(team => {
-        const teamItem = document.createElement('div');
-        teamItem.classList.add('team-item');
-  
-        teamItem.innerHTML = `
-          <div class="team-info">
-            <img src=${team.img} alt="Team logo">
-            <div class="details">
-              <span class="team-name">${team.name}</span>
-              <span class="country">${team.country}</span>
-            </div>
+  });
+
+  button.classList.add('active');
+  const checkmark = document.createElement('span');
+  checkmark.innerHTML = '&#x2713;';
+  button.appendChild(checkmark);
+
+  const listContainer = document.getElementById('ranked-list');
+  listContainer.innerHTML = '';
+  const spinner = document.getElementById('loading-spinner');
+
+  if (rankedLists[region].length == 2) {
+    spinner.style.display = 'block';
+  } else {
+    spinner.style.display = 'none';
+    rankedLists[region].forEach(team => {
+      const teamItem = document.createElement('div');
+      teamItem.classList.add('team-item');
+      teamItem.style.cursor = 'pointer'; // indicate it's clickable
+
+      // Use a fallback (e.g., default_logo.png) if team.img is missing
+      teamItem.innerHTML = `
+        <div class="team-info">
+          <img src="${team.img || 'default_logo.png'}" alt="Team logo">
+          <div class="details">
+            <span class="team-name">${team.name}</span>
+            <span class="country">${team.country}</span>
           </div>
-          <div class="rating">${team.id}</div>
-        `;
-  
-        listContainer.appendChild(teamItem);
-      });
-    }
+        </div>
+        <div class="rating">${team.id || team.rating}</div>
+      `;
 
+      // Make the team item clickable – passing the team id via query parameter
+      teamItem.addEventListener('click', () => {
+        window.location.href = `team.html?teamid=${team.id}`;
+      });
+
+      listContainer.appendChild(teamItem);
+    });
   }
+}
 
 // Call the function when the page loads
 window.addEventListener('load', getAndDisplayTeams);

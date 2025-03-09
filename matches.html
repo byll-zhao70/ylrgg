@@ -16,6 +16,32 @@
       color: #e0e0e0;
     }
 
+    /* Fade container styles (only applied to main content) */
+    .fade-container {
+      transition: opacity 0.5s ease;
+    }
+
+    /* Apply the fade-in animation */
+    .fade-in {
+      animation: fadeIn 0.5s forwards;
+    }
+    
+    /* Fade-out animation class */
+    .fade-out {
+      animation: fadeOut 0.5s forwards;
+    }
+
+    /* Fade-in keyframes */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+
     /* Sidebar styles */
     .sidebar {
       width: 80px;
@@ -148,7 +174,7 @@
 </div>
 
   <!-- Main content -->
-  <div class="main-content">
+  <div class="main-content fade-container fade-in">
     <h1>Match List</h1>
 
     <!-- Filter for Date and Buttons for Match Types -->
@@ -250,6 +276,7 @@ async function fetchUpcomingMatches() {
           matchElement.setAttribute('data-id', match.id);
 
           const matchContent = `
+            <img src=${match.img} width="90" height="90" align="left" alt="match logo">
             <div><strong>${match.event}</strong> - ${match.tournament}</div>
             <div>${match.teams[0].name} vs ${match.teams[1].name}</div>
             <div>Status: ${match.status}</div>
@@ -269,7 +296,7 @@ async function fetchUpcomingMatches() {
 
     // Function to navigate to the match details page
     function goToMatchDetails(matchId) {
-      window.location.href = `matchdetails.html?match-id=${matchId}`;
+      redirectWithFade(event, `matchdetails.html?match-id=${matchId}`);
     }
 
 function filterMatches() {
@@ -295,6 +322,23 @@ function filterMatches() {
 
 
 
+
+    function setActiveSidebarButton(button) {
+      const links = document.querySelectorAll('.sidebar a');
+      links.forEach(link => link.classList.remove('active'));
+      button.classList.add('active');
+    }
+
+    function redirectWithFade(event, destination) {
+      event.preventDefault(); // Prevent immediate navigation
+      // Add the fade-out class to the main content container (not the sidebar)
+      const fadeContainer = document.querySelector('.fade-container');
+      fadeContainer.classList.remove('fade-in');
+      fadeContainer.classList.add('fade-out');
+      setTimeout(() => {
+        window.location.href = destination;
+      }, 500); // Delay matches the fade-out duration (0.5s)
+    }
 
     // Fetch upcoming matches by default when the page loads
     window.onload = fetchUpcomingMatches;

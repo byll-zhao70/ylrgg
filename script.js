@@ -1,6 +1,8 @@
 // URL of the initial API request (replace with the actual URL)
 const apiUrl = 'https://vlr.orlandomm.net/api/v1/teams';
 
+let currentRegion = 'na';
+
 let rankedLists = {
     na: [
       { name: "Sentinels", country: "USA", rating: 1950 },
@@ -78,12 +80,14 @@ async function getAllTeams() {
     try {
         for (let region in regions) {
             const info = await getAllTeamsByRegion(regions[region]);
-            teamMap[regions[region]] = info;
+            rankedLists[regions[region]] = info;
+            if(regions[region] === currentRegion){
+              showRankedList(currentRegion, document.getElementById(currentRegion));
+            }
         }
     } catch(error) {
         console.error('Error Fetching teams:', error);
     }
-    return teamMap;
 }
 
 // Function to convert team data 
@@ -92,7 +96,7 @@ async function getAllTeams() {
 async function getAndDisplayTeams() {
     try {
         // Get all teams from all pages
-        const teams = await getAllTeams();
+        await getAllTeams();
         
         // Get the container where the teams will be displayed
         //const container = document.getElementById('teams-container');
@@ -106,9 +110,6 @@ async function getAndDisplayTeams() {
         //    return;
         //}
         
-        rankedLists = teams
-
-        console.log(teams['na'])
 
         // Default Functionality for Base Region 
 
@@ -176,42 +177,55 @@ async function getAndDisplayTeams() {
 }
 
 function showRankedList(region, button) {
-    const buttons = document.querySelectorAll('.region-button');
-    buttons.forEach(btn => {
-      btn.classList.remove('active');
-      if (btn.querySelector('span')) {
-        btn.querySelector('span').remove();
-      }
-    });
+  currentRegion = button.id;
+  const buttons = document.querySelectorAll('.region-button');
+  buttons.forEach(btn => {
+    btn.classList.remove('active');
+    if (btn.querySelector('span')) {
+      btn.querySelector('span').remove();
+    }
+  });
 
-    console.log(rankedLists[region]);
+  button.classList.add('active');
+  const checkmark = document.createElement('span');
+  checkmark.innerHTML = '&#x2713;';
+  button.appendChild(checkmark);
 
-    button.classList.add('active');
-    const checkmark = document.createElement('span');
-    checkmark.innerHTML = '&#x2713;';
-    button.appendChild(checkmark);
+  const listContainer = document.getElementById('ranked-list');
+  listContainer.innerHTML = '';
+  const spinner = document.getElementById('loading-spinner');
 
-    const listContainer = document.getElementById('ranked-list');
-    listContainer.innerHTML = '';
-
+  if (rankedLists[region].length == 2) {
+    spinner.style.display = 'block';
+  } else {
+    spinner.style.display = 'none';
     rankedLists[region].forEach(team => {
       const teamItem = document.createElement('div');
       teamItem.classList.add('team-item');
+      teamItem.style.cursor = 'pointer'; // indicate it's clickable
 
+      // Use a fallback (e.g., default_logo.png) if team.img is missing
       teamItem.innerHTML = `
         <div class="team-info">
-          <img src=${team.img} alt="Team logo">
+          <img src="${team.img || 'default_logo.png'}" alt="Team logo">
           <div class="details">
             <span class="team-name">${team.name}</span>
             <span class="country">${team.country}</span>
           </div>
         </div>
-        <div class="rating">${team.id}</div>
+        <div class="rating">${team.id || team.rating}</div>
       `;
+
+      // Make the team item clickable – passing the team id via query parameter
+      teamItem.addEventListener('click', () => {
+        window.location.href = `team.html?teamid=${team.id}`;
+      });
 
       listContainer.appendChild(teamItem);
     });
   }
+}
 
 // Call the function when the page loads
 window.addEventListener('load', getAndDisplayTeams);
+showRankedList(currentRegion, document.getElementById(currentRegion));

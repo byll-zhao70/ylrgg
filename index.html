@@ -139,26 +139,28 @@
   </style>
 </head>
 <body>
-  <!-- Sidebar with navigation links -->
   <div class="sidebar">
-    <a href="#" class="active" onclick="setActiveSidebarButton(this)">
+    <a href="index.html" id="home">
       <img src="vlr.png" alt="Home">
       Home
     </a>
-    <a href="#" onclick="redirectWithFade(event, 'matches.html')">
+    <a href="matches.html" id="matches">
       <img src="vlr.png" alt="Match List">
       Match List  
     </a>
-    <a href="#" onclick="redirectWithFade(event, 'teams.html')">
+    <a href="tournaments.html" id="tournaments">
+      <img src="vlr.png" alt="Tournaments">
+      Tournaments
+    </a>    
+    <a href="teams.html" id="teams">
       <img src="vlr.png" alt="Teams and Players">
       Teams and Players
     </a>
-    <a href="#" onclick="setActiveSidebarButton(this)">
+    <a href="forums.html" id="forums">
       <img src="vlr.png" alt="Forums">
       Forums
     </a>
-  </div>
-
+</div>
   <!-- Main content with sections -->
   <div class="main-content fade-container fade-in">
     <!-- Upcoming Matches Section -->
@@ -207,6 +209,17 @@
   </div>
 
   <script>
+      // Highlight the active link based on the current URL
+  document.addEventListener("DOMContentLoaded", function() {
+    const links = document.querySelectorAll(".sidebar a");
+    const currentPage = window.location.pathname.split("/").pop(); // Get the current filename
+
+    links.forEach(link => {
+      if (link.getAttribute("href") === currentPage) {
+        link.classList.add("active");
+      }
+    });
+  });
     // Function to update the active sidebar button
     function setActiveSidebarButton(button) {
       const links = document.querySelectorAll('.sidebar a');

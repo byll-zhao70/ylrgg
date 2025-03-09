@@ -124,26 +124,28 @@
   </style>
 </head>
 <body>
-
-  <!-- Sidebar with navigation links -->
   <div class="sidebar">
-    <a href="index.html">
+    <a href="index.html" id="home">
       <img src="vlr.png" alt="Home">
       Home
     </a>
-    <a href="matches.html" class="active">
+    <a href="matches.html" id="matches">
       <img src="vlr.png" alt="Match List">
-      Match List
+      Match List  
     </a>
-    <a href="teams.html">
+    <a href="tournaments.html" id="tournaments">
+      <img src="vlr.png" alt="Tournaments">
+      Tournaments
+    </a>    
+    <a href="teams.html" id="teams">
       <img src="vlr.png" alt="Teams and Players">
       Teams and Players
     </a>
-    <a href="forums.html">
+    <a href="forums.html" id="forums">
       <img src="vlr.png" alt="Forums">
       Forums
     </a>
-  </div>
+</div>
 
   <!-- Main content -->
   <div class="main-content">
@@ -163,37 +165,76 @@
   </div>
 
   <script>
-    // Function to fetch upcoming matches
-    async function fetchUpcomingMatches() {
-      try {
+      // Highlight the active link based on the current URL
+  document.addEventListener("DOMContentLoaded", function() {
+    const links = document.querySelectorAll(".sidebar a");
+    const currentPage = window.location.pathname.split("/").pop(); // Get the current filename
+
+    links.forEach(link => {
+      if (link.getAttribute("href") === currentPage) {
+        link.classList.add("active");
+      }
+    });
+  });
+function convertRelativeTime(relativeTime) {
+    const now = new Date(); // Current date and time
+    const futureDate = new Date(now); // Create a copy to modify
+
+    // Regular expressions to extract days, hours, and minutes
+    const daysMatch = relativeTime.match(/(\d+)d/);  // Matches "4d"
+    const hoursMatch = relativeTime.match(/(\d+)h/);  // Matches "1h"
+    const minutesMatch = relativeTime.match(/(\d+)m/); // Matches "52m"
+
+    if (daysMatch) {
+        futureDate.setDate(futureDate.getDate() + parseInt(daysMatch[1])); // Add days
+    }
+    if (hoursMatch) {
+        futureDate.setHours(futureDate.getHours() + parseInt(hoursMatch[1])); // Add hours
+    }
+    if (minutesMatch) {
+        futureDate.setMinutes(futureDate.getMinutes() + parseInt(minutesMatch[1])); // Add minutes
+    }
+
+    return futureDate; // Return the computed future Date object
+}
+
+
+
+// Function to fetch upcoming matches
+async function fetchUpcomingMatches() {
+    try {
         const response = await fetch('https://vlr.orlandomm.net/api/v1/matches');
         const data = await response.json();
         const matchList = document.getElementById('match-list');
         matchList.innerHTML = ''; // Clear the existing matches
 
         data.data.forEach(match => {
-          const matchElement = document.createElement('div');
-          matchElement.classList.add('match');
-          matchElement.setAttribute('data-id', match.id);
-          matchElement.setAttribute('data-date', match.in);
+            const matchElement = document.createElement('div');
+            matchElement.classList.add('match');
+            matchElement.setAttribute('data-id', match.id);
+            matchElement.setAttribute('data-date', match.in);
 
-          const matchContent = `
-            <img src=${match.img} width="60" height="60" align="left" alt="match logo">
-            <div><strong>${match.event}</strong> - ${match.tournament}</div>
-            <div>${match.teams[0].name} vs ${match.teams[1].name}</div>
-            <div>Status: ${match.status}</div>
-            <div>Time: ${match.in}</div>
-          `;
-          
-          matchElement.innerHTML = matchContent;
-          matchElement.setAttribute('onclick', `goToMatchDetails('${match.id}')`);
-          
-          matchList.appendChild(matchElement);
+            const absoluteTime = convertRelativeTime(match.in);
+
+            const matchContent = `
+                <img src=${match.img} width="60" height="60" align="left" alt="match logo">
+                <div><strong>${match.event}</strong> - ${match.tournament}</div>
+                <div>${match.teams[0].name} vs ${match.teams[1].name}</div>
+                <div>Status: ${match.status}</div>
+                <div>Time: ${match.in} (${absoluteTime})</div>
+            `;
+            
+            matchElement.innerHTML = matchContent;
+            matchElement.setAttribute('onclick', `goToMatchDetails('${match.id}')`);
+            
+            matchList.appendChild(matchElement);
         });
-      } catch (error) {
+    } catch (error) {
         console.error('Error fetching upcoming matches:', error);
-      }
     }
+}
+
+
 
     // Function to fetch completed matches
     async function fetchCompletedMatches() {
@@ -231,15 +272,29 @@
       window.location.href = `matchdetails.html?match-id=${matchId}`;
     }
 
-    // Filter matches based on the selected date
-    function filterMatches() {
-      const selectedDate = document.getElementById("match-date").value;
-      const matches = document.querySelectorAll(".match");
+function filterMatches() {
+    const selectedDate = document.getElementById("match-date").value;
+    const matches = document.querySelectorAll(".match");
 
-      matches.forEach(match => {
-        match.style.display = match.getAttribute("data-date") === selectedDate || selectedDate === "" ? "block" : "none";
-      });
-    }
+    matches.forEach(match => {
+        const matchTimeText = match.getAttribute("data-date");
+        const matchDate = convertRelativeTime(matchTimeText); // Get Date object
+
+        // Convert match date to local date (YYYY-MM-DD)
+        const formattedMatchDate = matchDate.getFullYear() + '-' +
+            String(matchDate.getMonth() + 1).padStart(2, '0') + '-' +
+            String(matchDate.getDate()).padStart(2, '0');
+
+        if (selectedDate === "" || formattedMatchDate === selectedDate) {
+            match.style.display = "block"; // Show match
+        } else {
+            match.style.display = "none"; // Hide match
+        }
+    });
+}
+
+
+
 
     // Fetch upcoming matches by default when the page loads
     window.onload = fetchUpcomingMatches;

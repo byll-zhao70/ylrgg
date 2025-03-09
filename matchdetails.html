@@ -6,11 +6,91 @@
   <title>Match Details</title>
   <style>
     /* Add your styles here, similar to your previous page */
+    /* Fade container styles (only applied to main content) */
+    .fade-container {
+      transition: opacity 0.5s ease;
+    }
+
+    /* Apply the fade-in animation */
+    .fade-in {
+      animation: fadeIn 0.5s forwards;
+    }
+    
+    /* Fade-out animation class */
+    .fade-out {
+      animation: fadeOut 0.5s forwards;
+    }
+
+    /* Fade-in keyframes */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+
+    /* Sidebar styles */
+    .sidebar {
+      width: 80px;
+      background-color: #151515;
+      color: white;
+      padding: 10px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: fixed;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .sidebar a {
+      text-decoration: none;
+      color: white;
+      margin: 10px 0;
+      padding: 10px 0;
+      width: 100%;
+      text-align: center;
+      border-radius: 5px;
+      transition: background-color 0.3s, transform 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .sidebar a img {
+      width: 24px;
+      height: 24px;
+      margin-bottom: 5px;
+    }
+
+    .sidebar a:hover {
+      background-color: #444;
+      transform: scale(1.05);
+    }
+
+    .sidebar a.active {
+      background-color: #4caf50;
+    }
+
+    /* Main content area */
+    .main-content {
+      flex-grow: 1;
+      padding: 20px;
+      overflow-x: hidden;
+      width: calc(100% - 80px);
+      margin-left: 80px;
+    }
+
     body {
+      display: flex;
       font-family: Arial, sans-serif;
+      margin: 0;
+      height: 100vh;
       background-color: #1e1e1e;
       color: #e0e0e0;
-      padding: 20px;
     }
     .match-details {
       background-color: #2b2b2b;
@@ -36,14 +116,32 @@
   </style>
 </head>
 <body>
-
-  <h1>Match Details</h1>
-  <div class="match-details" id="match-details">
-    <!-- Match details will be inserted here -->
+  <div class="sidebar">
+    <a href="#" onclick="redirectWithFade(event, 'index.html')">
+      <img src="vlr.png" alt="Home">
+      Home
+    </a>
+    <a href="#" class="active"onclick="redirectWithFade(event, 'matches.html')">
+      <img src="vlr.png" alt="Match List">
+      Match List  
+    </a>
+    <a href="#" onclick="redirectWithFade(event, 'teams.html')">
+      <img src="vlr.png" alt="Teams and Players">
+      Teams and Players
+    </a>
+    <a href="#" onclick="setActiveSidebarButton(this)">
+      <img src="vlr.png" alt="Forums">
+      Forums
+    </a>
   </div>
-  
-  <button class="back-button" onclick="window.history.back()">Back</button>
-
+  <div class="main-content fade-container fade-in">
+    <h1>Match Details</h1>
+    <div class="match-details" id="match-details">
+      <!-- Match details will be inserted here -->
+    </div>
+    
+    <button class="back-button" onclick="window.history.back()">Back</button>
+  </div>
   <script>
     async function fetchMatchDetails() {
       // Get match-id from URL query string
@@ -72,22 +170,23 @@
           `;
           return;  // Exit function after finding the match in the upcoming matches
         }
-  
+        for(let page = 1; page < 11; page++){
         // If not found in upcoming matches, try fetching completed match data
-        const responseCompleted = await fetch(`https://vlr.orlandomm.net/api/v1/results?page=1`);
-        const dataCompleted = await responseCompleted.json();
-        const matchCompleted = dataCompleted.data.find(match => match.id === matchId);
-  
-        if (matchCompleted) {
-          // Populate match details for completed match
-          document.getElementById('match-details').innerHTML = `
-            <h2>${matchCompleted.event} - ${matchCompleted.tournament}</h2>
-            <p><strong>Teams:</strong> ${matchCompleted.teams[0].name} vs ${matchCompleted.teams[1].name}</p>
-            <p><strong>Result:</strong> ${matchCompleted.teams[0].score} - ${matchCompleted.teams[1].score}</p>
-            <p><strong>Status:</strong> ${matchCompleted.status}</p>
-            <p><strong>Time:</strong> ${matchCompleted.ago}</p>
-          `;
-          return;  // Exit function after finding the match in completed matches
+          const responseCompleted = await fetch(`https://vlr.orlandomm.net/api/v1/results?page=${page}`);
+          const dataCompleted = await responseCompleted.json();
+          const matchCompleted = dataCompleted.data.find(match => match.id === matchId);
+    
+          if (matchCompleted) {
+            // Populate match details for completed match
+            document.getElementById('match-details').innerHTML = `
+              <h2>${matchCompleted.event} - ${matchCompleted.tournament}</h2>
+              <p><strong>Teams:</strong> ${matchCompleted.teams[0].name} vs ${matchCompleted.teams[1].name}</p>
+              <p><strong>Result:</strong> ${matchCompleted.teams[0].score} - ${matchCompleted.teams[1].score}</p>
+              <p><strong>Status:</strong> ${matchCompleted.status}</p>
+              <p><strong>Time:</strong> ${matchCompleted.ago}</p>
+            `;
+            return;  // Exit function after finding the match in completed matches
+          }
         }
   
         // If not found in either upcoming or completed matches
@@ -96,6 +195,16 @@
         console.error('Error fetching match details:', error);
         document.getElementById('match-details').innerHTML = "<p>Match not found.</p>";
       }
+    }
+    function redirectWithFade(event, destination) {
+      event.preventDefault(); // Prevent immediate navigation
+      // Add the fade-out class to the main content container (not the sidebar)
+      const fadeContainer = document.querySelector('.fade-container');
+      fadeContainer.classList.remove('fade-in');
+      fadeContainer.classList.add('fade-out');
+      setTimeout(() => {
+        window.location.href = destination;
+      }, 500); // Delay matches the fade-out duration (0.5s)
     }
   
     // Fetch match details on page load

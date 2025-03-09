@@ -146,7 +146,7 @@
       return urlParams.get(param);
     }
 
-    // Helper to create a clickable list item with an optional image
+    // Helper to create a clickable list item with an optional image and click callback
     function createClickableListItem(text, imgSrc, onClickCallback) {
       const item = document.createElement('div');
       item.classList.add('list-item');
@@ -210,7 +210,10 @@
         teamSection.innerHTML = `<h2>Current Team</h2>`;
         const teamItem = createClickableListItem(
           `${data.data.team.name} (Joined: ${data.data.team.joined})`,
-          data.data.team.logo
+          data.data.team.logo,
+          (event) => {
+            redirectWithFade(event, `team.html?teamid=${data.data.team.id}`);
+          }
         );
         teamSection.appendChild(teamItem);
         container.appendChild(teamSection);
@@ -224,7 +227,13 @@
         resultsHeader.textContent = 'Match Results';
         resultsSection.appendChild(resultsHeader);
         data.data.results.forEach(result => {
-          const item = createClickableListItem(result.event.name, result.event.logo);
+          const item = createClickableListItem(
+            result.event.name,
+            result.event.logo,
+            (event) => {
+              redirectWithFade(event, `matchdetails.html?match-id=${result.match.id}`);
+            }
+          );
           resultsSection.appendChild(item);
         });
         container.appendChild(resultsSection);
@@ -238,7 +247,13 @@
         pastTeamsHeader.textContent = 'Previous Teams';
         pastTeamsSection.appendChild(pastTeamsHeader);
         data.data.pastTeams.forEach(team => {
-          const item = createClickableListItem(team.name, team.logo);
+          const item = createClickableListItem(
+            team.name,
+            team.logo,
+            (event) => {
+              redirectWithFade(event, `team.html?teamid=${team.id}`);
+            }
+          );
           pastTeamsSection.appendChild(item);
         });
         container.appendChild(pastTeamsSection);
@@ -256,7 +271,7 @@
           const twitterItem = createClickableListItem(
             `Twitter: ${data.data.socials.twitter}`,
             null,
-            () => {
+            (event) => {
               window.open(data.data.socials.twitter_url, '_blank');
             }
           );
@@ -267,7 +282,7 @@
           const twitchItem = createClickableListItem(
             `Twitch: ${data.data.socials.twitch}`,
             null,
-            () => {
+            (event) => {
               window.open(data.data.socials.twitch_url, '_blank');
             }
           );

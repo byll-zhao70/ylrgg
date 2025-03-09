@@ -170,22 +170,23 @@
           `;
           return;  // Exit function after finding the match in the upcoming matches
         }
-  
+        for(let page = 1; page < 11; page++){
         // If not found in upcoming matches, try fetching completed match data
-        const responseCompleted = await fetch(`https://vlr.orlandomm.net/api/v1/results?page=1`);
-        const dataCompleted = await responseCompleted.json();
-        const matchCompleted = dataCompleted.data.find(match => match.id === matchId);
-  
-        if (matchCompleted) {
-          // Populate match details for completed match
-          document.getElementById('match-details').innerHTML = `
-            <h2>${matchCompleted.event} - ${matchCompleted.tournament}</h2>
-            <p><strong>Teams:</strong> ${matchCompleted.teams[0].name} vs ${matchCompleted.teams[1].name}</p>
-            <p><strong>Result:</strong> ${matchCompleted.teams[0].score} - ${matchCompleted.teams[1].score}</p>
-            <p><strong>Status:</strong> ${matchCompleted.status}</p>
-            <p><strong>Time:</strong> ${matchCompleted.ago}</p>
-          `;
-          return;  // Exit function after finding the match in completed matches
+          const responseCompleted = await fetch(`https://vlr.orlandomm.net/api/v1/results?page=${page}`);
+          const dataCompleted = await responseCompleted.json();
+          const matchCompleted = dataCompleted.data.find(match => match.id === matchId);
+    
+          if (matchCompleted) {
+            // Populate match details for completed match
+            document.getElementById('match-details').innerHTML = `
+              <h2>${matchCompleted.event} - ${matchCompleted.tournament}</h2>
+              <p><strong>Teams:</strong> ${matchCompleted.teams[0].name} vs ${matchCompleted.teams[1].name}</p>
+              <p><strong>Result:</strong> ${matchCompleted.teams[0].score} - ${matchCompleted.teams[1].score}</p>
+              <p><strong>Status:</strong> ${matchCompleted.status}</p>
+              <p><strong>Time:</strong> ${matchCompleted.ago}</p>
+            `;
+            return;  // Exit function after finding the match in completed matches
+          }
         }
   
         // If not found in either upcoming or completed matches

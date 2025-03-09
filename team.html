@@ -167,8 +167,8 @@
       }
     }
 
-    // Create a clickable list item with an optional image
-    function createClickableListItem(text, imgSrc) {
+    // Create a clickable list item with an optional image and click callback
+    function createClickableListItem(text, imgSrc, onClickCallback) {
       const item = document.createElement('div');
       item.classList.add('list-item');
       if (imgSrc) {
@@ -180,33 +180,14 @@
       const span = document.createElement('span');
       span.textContent = text;
       item.appendChild(span);
-      // Placeholder click event – adjust as needed later
-      item.addEventListener('click', () => {
-        console.log('Clicked on:', text);
-      });
+      if (onClickCallback) {
+        item.addEventListener('click', onClickCallback);
+      } else {
+        item.addEventListener('click', () => {
+          console.log('Clicked on:', text);
+        });
+      }
       return item;
-    }
-
-    function createClickableListItem(text, imgSrc, onClickCallback) {
-        const item = document.createElement('div');
-        item.classList.add('list-item');
-        if (imgSrc) {
-            const img = document.createElement('img');
-            img.src = imgSrc;
-            img.alt = text;
-            item.appendChild(img);
-        }
-        const span = document.createElement('span');
-        span.textContent = text;
-        item.appendChild(span);
-        if (onClickCallback) {
-            item.addEventListener('click', onClickCallback);
-        } else {
-            item.addEventListener('click', () => {
-            console.log('Clicked on:', text);
-            });
-        }
-        return item;
     }
 
     // Display team details in the page
@@ -236,30 +217,30 @@
         playersHeader.textContent = 'Players';
         playersSection.appendChild(playersHeader);
         data.data.players.forEach(player => {
-            const item = createClickableListItem(player.name, player.img, () => {
+          const item = createClickableListItem(player.name, player.img, () => {
             // Redirect to player.html with the player's id as a query parameter
             window.location.href = `player.html?playerid=${player.id}`;
-            });
-            playersSection.appendChild(item);
+          });
+          playersSection.appendChild(item);
         });
         container.appendChild(playersSection);
       }
 
-      // Events Section
+      // Events Section (non-clickable)
       if (data.data.events && data.data.events.length > 0) {
         const eventsSection = document.createElement('div');
         eventsSection.classList.add('team-details-section');
         const eventsHeader = document.createElement('h2');
         eventsHeader.textContent = 'Events';
         eventsSection.appendChild(eventsHeader);
-        data.data.events.forEach(event => {
-          const item = createClickableListItem(`${event.name} (${event.year})`);
+        data.data.events.forEach(eventItem => {
+          const item = createClickableListItem(`${eventItem.name} (${eventItem.year})`);
           eventsSection.appendChild(item);
         });
         container.appendChild(eventsSection);
       }
 
-      // Results Section
+      // Results Section - when clicked, redirect to matchdetails.html with match id
       if (data.data.results && data.data.results.length > 0) {
         const resultsSection = document.createElement('div');
         resultsSection.classList.add('team-details-section');
@@ -267,13 +248,19 @@
         resultsHeader.textContent = 'Results';
         resultsSection.appendChild(resultsHeader);
         data.data.results.forEach(result => {
-          const item = createClickableListItem(result.event.name, result.event.logo);
+          const item = createClickableListItem(
+            result.event.name,
+            result.event.logo,
+            (event) => {
+              redirectWithFade(event, `matchdetails.html?match-id=${result.match.id}`);
+            }
+          );
           resultsSection.appendChild(item);
         });
         container.appendChild(resultsSection);
       }
 
-      // Upcoming Matches Section
+      // Upcoming Matches Section - when clicked, redirect to matchdetails.html with match id
       if (data.data.upcoming && data.data.upcoming.length > 0) {
         const upcomingSection = document.createElement('div');
         upcomingSection.classList.add('team-details-section');
@@ -281,7 +268,13 @@
         upcomingHeader.textContent = 'Upcoming Matches';
         upcomingSection.appendChild(upcomingHeader);
         data.data.upcoming.forEach(match => {
-          const item = createClickableListItem(match.event.name, match.event.logo);
+          const item = createClickableListItem(
+            match.event.name,
+            match.event.logo,
+            (event) => {
+              redirectWithFade(event, `matchdetails.html?match-id=${match.match.id}`);
+            }
+          );
           upcomingSection.appendChild(item);
         });
         container.appendChild(upcomingSection);

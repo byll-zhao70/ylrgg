@@ -154,7 +154,6 @@
   </div>
   <script>
 async function fetchMatchDetails() {
-    // Get match-id from URL query string
     const urlParams = new URLSearchParams(window.location.search);
     const matchId = urlParams.get('match-id');
     
@@ -164,30 +163,23 @@ async function fetchMatchDetails() {
     }
 
     try {
-        // Get the number of previous results from the input field
         const numResults = parseInt(document.getElementById('num-results').value, 10);
-
-        // Fetch the team mapping data from the teammapping.json file
         const responseTeamMapping = await fetch('teamMapping.json');
         const teamMapping = await responseTeamMapping.json();
 
-        // First try to fetch upcoming match data
+        // Try fetching upcoming match data
         const responseUpcoming = await fetch(`https://vlr.orlandomm.net/api/v1/matches`);
         const dataUpcoming = await responseUpcoming.json();
         const matchUpcoming = dataUpcoming.data.find(match => match.id === matchId);
 
         if (matchUpcoming) {
-            // Match teams' names to team IDs using teammapping.json
             const team1Id = teamMapping[matchUpcoming.teams[0].name];
             const team2Id = teamMapping[matchUpcoming.teams[1].name];
-
-            // Fetch team details for both teams
             const responseTeam1 = await fetch(`https://vlr.orlandomm.net/api/v1/teams/${team1Id}`);
             const responseTeam2 = await fetch(`https://vlr.orlandomm.net/api/v1/teams/${team2Id}`);
             const team1Details = await responseTeam1.json();
             const team2Details = await responseTeam2.json();
 
-            // Extract the past results, limiting them based on numResults
             const team1Results = team1Details.data.results.slice(0, numResults).map(result => {
                 return `
                     <p><strong>Event:</strong> ${result.event.name}</p>
@@ -202,7 +194,6 @@ async function fetchMatchDetails() {
                 `;
             }).join('');
 
-            // Populate match details and past results for both teams
             document.getElementById('match-details').innerHTML = `
                 <h2>${matchUpcoming.event} - ${matchUpcoming.tournament}</h2>
                 <p><strong>Teams:</strong> ${matchUpcoming.teams[0].name} vs ${matchUpcoming.teams[1].name}</p>
@@ -224,74 +215,74 @@ async function fetchMatchDetails() {
                 <h4>Past Results:</h4>
                 ${team2Results || "<p>No past results available.</p>"}
             `;
-            return;  // Exit function after finding the match in the upcoming matches
+            return;
         }
 
-        for (let page = 1; page < 11; page++) {
-            // If not found in upcoming matches, try fetching completed match data
-            const responseCompleted = await fetch(`https://vlr.orlandomm.net/api/v1/results?page=${page}`);
-            const dataCompleted = await responseCompleted.json();
-            const matchCompleted = dataCompleted.data.find(match => match.id === matchId);
+        const responseCompleted = await fetch('https://vlrggapi.vercel.app/match?q=results');
+        const dataCompleted = await responseCompleted.json();
+        const matchCompleted = dataCompleted.data.segments.find(match => {
+            // Extract match ID from URL (format: "/318931/slug")
+            const matchIdFromURL = match.match_page.split('/')[1];
+            return matchIdFromURL === matchId;
+        });
 
-            if (matchCompleted) {
-                // Match teams' names to team IDs using teammapping.json
-                const team1Id = teamMapping[matchCompleted.teams[0].name];
-                const team2Id = teamMapping[matchCompleted.teams[1].name];
+        if (matchCompleted) {
+        // Get team IDs from mapping (ensure team names match your teamMapping.json keys)
+        const team1Id = teamMapping[matchCompleted.team1];
+        const team2Id = teamMapping[matchCompleted.team2];
+        const responseTeam1 = await fetch(`https://vlr.orlandomm.net/api/v1/teams/${team1Id}`);
+        const responseTeam2 = await fetch(`https://vlr.orlandomm.net/api/v1/teams/${team2Id}`);
+        const team1Details = await responseTeam1.json();
+        const team2Details = await responseTeam2.json();
 
-                // Fetch team details for both teams
-                const responseTeam1 = await fetch(`https://vlr.orlandomm.net/api/v1/teams/${team1Id}`);
-                const responseTeam2 = await fetch(`https://vlr.orlandomm.net/api/v1/teams/${team2Id}`);
-                const team1Details = await responseTeam1.json();
-                const team2Details = await responseTeam2.json();
+        // Past results for team1
+        const team1Results = team1Details.data.results.slice(0, numResults).map(result => {
+            return `
+                <p><strong>Event:</strong> ${result.event.name}</p>
+                <p><strong>Result:</strong> ${result.teams[0].name}: ${result.teams[0].points} - ${result.teams[1].name}: ${result.teams[1].points}</p>
+            `;
+        }).join('');
 
-                // Extract the past results, limiting them based on numResults
-                const team1Results = team1Details.data.results.slice(0, numResults).map(result => {
-                    return `
-                        <p><strong>Event:</strong> ${result.event.name}</p>
-                        <p><strong>Result:</strong> ${result.teams[0].name}: ${result.teams[0].points} - ${result.teams[1].name}: ${result.teams[1].points}</p>
-                    `;
-                }).join('');
+        // Past results for team2
+        const team2Results = team2Details.data.results.slice(0, numResults).map(result => {
+            return `
+                <p><strong>Event:</strong> ${result.event.name}</p>
+                <p><strong>Result:</strong> ${result.teams[0].name}: ${result.teams[0].points} - ${result.teams[1].name}: ${result.teams[1].points}</p>
+            `;
+        }).join('');
 
-                const team2Results = team2Details.data.results.slice(0, numResults).map(result => {
-                    return `
-                        <p><strong>Event:</strong> ${result.event.name}</p>
-                        <p><strong>Result:</strong> ${result.teams[0].name}: ${result.teams[0].points} - ${result.teams[1].name}: ${result.teams[1].points}</p>
-                    `;
-                }).join('');
+        document.getElementById('match-details').innerHTML = `
+            <h2>${matchCompleted.tournament_name}</h2>
+            <p><strong>Teams:</strong> ${matchCompleted.team1} vs ${matchCompleted.team2}</p>
+            <p><strong>Result:</strong> ${matchCompleted.score1} - ${matchCompleted.score2}</p>
+            <p><strong>Round Info:</strong> ${matchCompleted.round_info}</p>
+            <p><strong>Time Completed:</strong> ${matchCompleted.time_completed}</p>
+            <hr>
+            <h3>Team 1: ${matchCompleted.team1}</h3>
+            <p><strong>Full Team Name:</strong> ${team1Details.data.info.name}</p>
+            <p><strong>Country:</strong> ${team1Details.data.info.country || "Not available"}</p>
+            <p><strong>Logo:</strong> <img src="${team1Details.data.info.logo}" alt="${team1Details.data.info.name} logo" width="100"></p>
+            <h4>Past Results:</h4>
+            ${team1Results || "<p>No past results available.</p>"}
+            <hr>
+            <h3>Team 2: ${matchCompleted.team2}</h3>
+            <p><strong>Full Team Name:</strong> ${team2Details.data.info.name}</p>
+            <p><strong>Country:</strong> ${team2Details.data.info.country || "Not available"}</p>
+            <p><strong>Logo:</strong> <img src="${team2Details.data.info.logo}" alt="${team2Details.data.info.name} logo" width="100"></p>
+            <h4>Past Results:</h4>
+            ${team2Results || "<p>No past results available.</p>"}
+        `;
+        return;
+    }
 
-                // Populate match details and past results for both teams
-                document.getElementById('match-details').innerHTML = `
-                    <h2>${matchCompleted.event.name} - ${matchCompleted.event.logo}</h2>
-                    <p><strong>Teams:</strong> ${matchCompleted.teams[0].name} vs ${matchCompleted.teams[1].name}</p>
-                    <p><strong>Result:</strong> ${matchCompleted.teams[0].points} - ${matchCompleted.teams[1].points}</p>
-                    <p><strong>Status:</strong> ${matchCompleted.match.status}</p>
-                    <p><strong>Time:</strong> ${matchCompleted.match.url}</p>
-                    <hr>
-                    <h3>Team 1: ${matchCompleted.teams[0].name}</h3>
-                    <p><strong>Full Team Name:</strong> ${team1Details.data.info.name}</p>
-                    <p><strong>Country:</strong> ${team1Details.data.info.country || "Not available"}</p>
-                    <p><strong>Logo:</strong> <img src="${team1Details.data.info.logo}" alt="${team1Details.data.info.name} logo" width="100"></p>
-                    <h4>Past Results:</h4>
-                    ${team1Results || "<p>No past results available.</p>"}
-                    <hr>
-                    <h3>Team 2: ${matchCompleted.teams[1].name}</h3>
-                    <p><strong>Full Team Name:</strong> ${team2Details.data.info.name}</p>
-                    <p><strong>Country:</strong> ${team2Details.data.info.country || "Not available"}</p>
-                    <p><strong>Logo:</strong> <img src="${team2Details.data.info.logo}" alt="${team2Details.data.info.name} logo" width="100"></p>
-                    <h4>Past Results:</h4>
-                    ${team2Results || "<p>No past results available.</p>"}
-                `;
-                return;  // Exit function after finding the match in the completed matches
-            }
-        }
-
-        // If not found in either upcoming or completed matches
         document.getElementById('match-details').innerHTML = "<p>Match not found.</p>";
     } catch (error) {
         console.error('Error fetching match details:', error);
         document.getElementById('match-details').innerHTML = "<p>Match not found.</p>";
     }
 }
+
+
     // Function to update the active sidebar button
     function setActiveSidebarButton(button) {
       const links = document.querySelectorAll('.sidebar a');

@@ -292,7 +292,12 @@ async function fetchMatchDetails() {
         document.getElementById('match-details').innerHTML = "<p>Match not found.</p>";
     }
 }
-
+    // Function to update the active sidebar button
+    function setActiveSidebarButton(button) {
+      const links = document.querySelectorAll('.sidebar a');
+      links.forEach(link => link.classList.remove('active'));
+      button.classList.add('active');
+    }
 
     function redirectWithFade(event, destination) {
       event.preventDefault(); // Prevent immediate navigation

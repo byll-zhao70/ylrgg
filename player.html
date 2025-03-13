@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Player Details</title>
+  <!-- Include D3 library -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
   <style>
     /* Shared styling based on team.html */
     body {
@@ -100,6 +102,22 @@
       height: 40px;
       margin-right: 10px;
     }
+    /* Styling for control buttons */
+    #stats-buttons, #xaxis-buttons {
+      margin-bottom: 10px;
+    }
+    #stats-buttons button, #xaxis-buttons button {
+      margin-right: 5px;
+      padding: 5px 10px;
+      border: none;
+      background-color: #4caf50;
+      color: white;
+      cursor: pointer;
+      border-radius: 3px;
+    }
+    #stats-buttons button:hover, #xaxis-buttons button:hover {
+      background-color: #45a049;
+    }
   </style>
 </head>
 <body>
@@ -183,7 +201,111 @@
       }
     }
 
-    // Display player details on the page
+    // Global variable to hold the CSV data and current x-axis mode
+    let csvDataGlobal = [];
+    let currentXMode = "datetime"; // other option: "sequence"
+
+    // Function to draw the line graph with animation using D3
+    // Accepts the dataset, the selected metric, and xAxis mode
+    function drawGraph(data, metric, xMode = currentXMode) {
+      // Remove any existing svg element
+      d3.select("#stats-graph").select("svg").remove();
+
+      const margin = {top: 20, right: 30, bottom: 50, left: 60},
+            width = 600 - margin.left - margin.right,
+            height = 300 - margin.top - margin.bottom;
+
+      const svg = d3.select("#stats-graph")
+                    .append("svg")
+                    .attr("width", width + margin.left + margin.right)
+                    .attr("height", height + margin.top + margin.bottom)
+                    .append("g")
+                    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+      let x, xValue;
+      if (xMode === "datetime") {
+        // x-axis uses the actual date values
+        x = d3.scaleTime()
+              .domain(d3.extent(data, d => d.Datetime))
+              .range([0, width]);
+        xValue = d => x(d.Datetime);
+      } else {
+        // x-axis uses sequential indices
+        x = d3.scaleLinear()
+              .domain([0, data.length - 1])
+              .range([0, width]);
+        xValue = (d, i) => x(i);
+      }
+
+      // Calculate y-axis domain using extent; force lower bound to zero if min is positive
+      let yExtent = d3.extent(data, d => d[metric]);
+      if (yExtent[0] > 0) { yExtent[0] = 0; }
+      const y = d3.scaleLinear()
+                  .domain(yExtent)
+                  .nice()
+                  .range([height, 0]);
+
+      // Define y-axis tick formatter if metric is "KAST All"
+      const yTickFormat = metric === "KAST All" ? d => d + "%" : undefined;
+
+      // Define axes
+      const xAxis = xMode === "datetime" ? d3.axisBottom(x).tickFormat(d3.timeFormat("%Y-%m-%d")) : d3.axisBottom(x);
+      const yAxis = d3.axisLeft(y).tickFormat(yTickFormat);
+
+      // Append axes
+      svg.append("g")
+         .attr("transform", "translate(0," + height + ")")
+         .call(xAxis)
+         .selectAll("text")
+         .attr("transform", "rotate(-45)")
+         .style("text-anchor", "end");
+
+      svg.append("g")
+         .call(yAxis);
+
+      // X-Axis Label
+      svg.append("text")
+      .attr("text-anchor", "middle")
+      .attr("x", width / 2)
+      .attr("y", height + margin.bottom)
+      .text(xMode === "datetime" ? "Datetime" : "Sequence")
+      .style("fill", "#e0e0e0")
+      .style("font-size", "12px");
+
+      // Y-Axis Label
+      svg.append("text")
+         .attr("text-anchor", "end")
+         .attr("transform", "rotate(-90)")
+         .attr("y", -margin.left + 15)
+         .attr("x", -margin.top)
+         .text(metric)
+         .style("fill", "#e0e0e0")
+         .style("font-size", "12px");
+
+      // Define line generator
+      const line = d3.line()
+                     .x((d, i) => xValue(d, i))
+                     .y(d => y(d[metric]));
+
+      // Append the line path
+      const path = svg.append("path")
+                      .datum(data)
+                      .attr("fill", "none")
+                      .attr("stroke", "#4caf50")
+                      .attr("stroke-width", 2)
+                      .attr("d", line);
+
+      // Animate the drawing of the line
+      const totalLength = path.node().getTotalLength();
+      path.attr("stroke-dasharray", totalLength + " " + totalLength)
+          .attr("stroke-dashoffset", totalLength)
+          .transition()
+          .duration(2000)
+          .ease(d3.easeLinear)
+          .attr("stroke-dashoffset", 0);
+    }
+
+    // Display player details on the page, including the statistics graph section
     function displayPlayerDetails(data) {
       const container = document.getElementById('player-details');
       container.innerHTML = '';
@@ -218,6 +340,95 @@
         teamSection.appendChild(teamItem);
         container.appendChild(teamSection);
       }
+
+      // Player Statistics Graph Section (inserted above Match Results)
+      const statsSection = document.createElement('div');
+      statsSection.classList.add('player-details-section');
+      statsSection.id = 'stats-section';
+      statsSection.innerHTML = `<h2>Player Statistics</h2>
+          <div id="xaxis-buttons">
+              <button data-xmode="datetime">X-Axis: Datetime</button>
+              <button data-xmode="sequence">X-Axis: Sequence</button>
+          </div>
+          <div id="stats-buttons">
+              <button data-metric="K All">K All</button>
+              <button data-metric="R2.0 All">R2.0 All</button>
+              <button data-metric="D All">D All</button>
+              <button data-metric="A All">A All</button>
+              <button data-metric="+/– All">+/– All</button>
+              <button data-metric="KAST All">KAST All</button>
+              <button data-metric="ADR All">ADR All</button>
+          </div>
+          <div id="stats-graph"></div>
+      `;
+      container.appendChild(statsSection);
+
+      // Load and process the CSV data for the graph
+      d3.csv("https://raw.githubusercontent.com/byll-zhao70/ylrgg/main/last_2500_matches.csv").then(csvData => {
+        // Filter rows with case-insensitive matching in the "Player URL" column
+        const playerUser = data.data.info.user.toLowerCase();
+        let filteredData = csvData.filter(d => d["Player URL"].toLowerCase().includes(playerUser));
+        // Parse dates and numeric values for all relevant columns
+        filteredData.forEach(d => {
+          d.Datetime = new Date(d.Datetime);
+          d["K All"] = +d["K All"];
+          d["R2.0 All"] = +d["R2.0 All"];
+          d["D All"] = +d["D All"];
+          d["A All"] = +d["A All"];
+          d["+/– All"] = +d["+/– All"];
+          // For KAST All, remove the "%" and convert to a number
+          d["KAST All"] = parseFloat(d["KAST All"].replace("%", ""));
+          d["ADR All"] = +d["ADR All"];
+        });
+        // Sort data by Datetime
+        filteredData.sort((a, b) => a.Datetime - b.Datetime);
+        // Save filtered data globally for future re-draws
+        csvDataGlobal = filteredData;
+        // Draw the graph using "K All" by default
+        drawGraph(filteredData, "K All");
+
+        // Add event listeners to metric buttons to update the graph on click
+        document.querySelectorAll('#stats-buttons button').forEach(button => {
+           button.addEventListener('click', function() {
+               const metric = this.getAttribute('data-metric');
+               drawGraph(csvDataGlobal, metric);
+           });
+        });
+
+        // Add event listeners to x-axis mode buttons
+        document.querySelectorAll('#xaxis-buttons button').forEach(button => {
+           button.addEventListener('click', function() {
+               currentXMode = this.getAttribute('data-xmode');
+               // Redraw current graph with the selected x-axis mode
+               let activeMetric = document.querySelector('#stats-buttons button.active');
+               if (!activeMetric) {
+                 activeMetric = document.querySelector('#stats-buttons button[data-metric="K All"]');
+               }
+               drawGraph(csvDataGlobal, activeMetric.getAttribute('data-metric'), currentXMode);
+           });
+        });
+        // Optionally, mark the default x-axis and y-axis button as active
+        document.querySelector('#xaxis-buttons button[data-xmode="datetime"]').classList.add('active');
+        document.querySelector('#stats-buttons button[data-metric="K All"]').classList.add('active');
+
+        // Update active state on y-axis buttons when clicked
+        document.querySelectorAll('#stats-buttons button').forEach(button => {
+           button.addEventListener('click', function() {
+             document.querySelectorAll('#stats-buttons button').forEach(btn => btn.classList.remove('active'));
+             this.classList.add('active');
+           });
+        });
+        // Update active state on x-axis buttons when clicked
+        document.querySelectorAll('#xaxis-buttons button').forEach(button => {
+           button.addEventListener('click', function() {
+             document.querySelectorAll('#xaxis-buttons button').forEach(btn => btn.classList.remove('active'));
+             this.classList.add('active');
+           });
+        });
+      }).catch(error => {
+        console.error("Error loading CSV data:", error);
+        document.getElementById('stats-graph').innerHTML = "<p>Error loading statistics data.</p>";
+      });
 
       // Match Results Section
       if (data.data.results && data.data.results.length > 0) {

@@ -168,7 +168,7 @@ async function fetchMatchDetails() {
         const numResults = parseInt(document.getElementById('num-results').value, 10);
 
         // Fetch the team mapping data from the teammapping.json file
-        const responseTeamMapping = await fetch('teammapping.json');
+        const responseTeamMapping = await fetch('teamMapping.json');
         const teamMapping = await responseTeamMapping.json();
 
         // First try to fetch upcoming match data

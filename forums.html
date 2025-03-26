@@ -165,17 +165,52 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // Function to render posts
     function renderPosts(posts) {
-      const container = document.getElementById('posts-container');
-      container.innerHTML = ''; // Clear existing posts
-      posts.forEach(post => {
-        const postDiv = document.createElement('div');
-        postDiv.className = 'forum-post';
-        postDiv.textContent = post.content;
-        container.appendChild(postDiv);
-      });
+  const container = document.getElementById('posts-container');
+  container.innerHTML = ''; // Clear existing posts
+
+  const currentUser = firebase.auth().currentUser;
+
+  posts.forEach(post => {
+    const postDiv = document.createElement('div');
+    postDiv.className = 'forum-post';
+
+    // Post content
+    postDiv.textContent = `${post.username}: ${post.content}`;
+
+    // Add a delete button if the current user is the author of the post
+    if (currentUser && currentUser.uid === post.userId) {
+      const deleteButton = document.createElement('button');
+      deleteButton.textContent = 'Delete';
+      deleteButton.style.marginLeft = '10px';
+      deleteButton.style.backgroundColor = '#e74c3c';
+      deleteButton.style.color = 'white';
+      deleteButton.style.border = 'none';
+      deleteButton.style.borderRadius = '5px';
+      deleteButton.style.cursor = 'pointer';
+      deleteButton.style.padding = '5px 10px';
+
+      // Attach delete functionality
+      deleteButton.onclick = () => deletePost(post.id);
+
+      postDiv.appendChild(deleteButton);
     }
+
+    container.appendChild(postDiv);
+  });
+}
+
+// Function to delete a post
+async function deletePost(postId) {
+  try {
+    await db.collection('forum-posts').doc(postId).delete();
+    alert('Post deleted successfully.');
+    loadPosts(); // Reload posts to reflect the deletion
+  } catch (error) {
+    console.error('Error deleting post:', error);
+    alert('Failed to delete post. Please try again.');
+  }
+}
 
     // Load posts from Firestore
     async function loadPosts() {

@@ -5,6 +5,30 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Sign Up - Teams</title>
   <style>
+    .fade-container {
+      transition: opacity 0.5s ease;
+    }
+
+    /* Apply the fade-in animation */
+    .fade-in {
+      animation: fadeIn 0.5s forwards;
+    }
+    
+    /* Fade-out animation class */
+    .fade-out {
+      animation: fadeOut 0.5s forwards;
+    }
+
+    /* Fade-in keyframes */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
     /* Reuse the same styles as index.html */
     body {
       display: flex;
@@ -108,28 +132,28 @@
 </head>
 <body>
   <div class="sidebar">
-    <a href="index.html" id="home">
-      <img src="vlr.png" alt="Home">
+    <a href="#" onclick="redirectWithFade(event, 'index.html')">
+      <img src="home.png" alt="Home">
       Home
     </a>
-    <a href="matches.html" id="matches">
+    <a href="#" onclick="redirectWithFade(event, 'matches.html')">
       <img src="vlr.png" alt="Match List">
       Match List  
     </a>
-    <a href="tournaments.html" id="tournaments">
-      <img src="vlr.png" alt="Tournaments">
+    <a href="#" onclick="redirectWithFade(event, 'tournaments.html')">
+      <img src="tournament.png" alt="Tournaments">
       Tournaments
-    </a>    
-    <a href="teams.html" id="teams">
-      <img src="vlr.png" alt="Teams and Players">
+    </a>
+    <a href="#" onclick="redirectWithFade(event, 'teams.html')">
+      <img src="team.png" alt="Teams and Players">
       Teams and Players
     </a>
-    <a href="forums.html" id="forums">
-      <img src="vlr.png" alt="Forums">
+    <a href="#" onclick="redirectWithFade(event, 'forums.html')">
+      <img src="forum.png" alt="Forums">
       Forums
     </a>
   </div>
-  <div class="main-content">
+  <div class="main-content fade-container fade-in">
     <div class="auth-container">
       <h2>Sign Up</h2>
       <input type="email" id="signup-email" placeholder="Email" required>
@@ -186,6 +210,18 @@
           alert('Error: ' + error.message);
         });
     });
+  </script>
+  <script>
+    function redirectWithFade(event, destination) {
+      event.preventDefault(); // Prevent immediate navigation
+      // Add the fade-out class to the main content container (not the sidebar)
+      const fadeContainer = document.querySelector('.fade-container');
+      fadeContainer.classList.remove('fade-in');
+      fadeContainer.classList.add('fade-out');
+      setTimeout(() => {
+        window.location.href = destination;
+      }, 500); // Delay matches the fade-out duration (0.5s)
+    }
   </script>
 </body>
 </html>

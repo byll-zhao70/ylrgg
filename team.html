@@ -295,7 +295,7 @@
         playersHeader.textContent = 'Players';
         playersSection.appendChild(playersHeader);
         data.data.players.forEach(player => {
-          const item = createClickableListItem(player.name, player.img, () => {
+          const item = createClickableListItem(player.name + " (" + player.user + ")", player.img, () => {
             // Redirect to player.html with the player's id as a query parameter
             window.location.href = `player.html?playerid=${player.id}`;
           });

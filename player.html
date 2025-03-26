@@ -67,11 +67,40 @@
     .sidebar a.active {
       background-color: #4caf50;
     }
+    .profile-btn {
+      margin-bottom: 10px;
+      cursor: pointer;
+      width: 100%;
+      text-align: center;
+    }
+    .profile-btn img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 2px solid #4caf50;
+    }
     .main-content {
       flex-grow: 1;
       padding: 20px;
       overflow-x: hidden;
       width: calc(100% - 80px);
+    }
+    .auth-header {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .auth-header a {
+      background-color: #4caf50;
+      color: white;
+      padding: 10px 20px;
+      text-decoration: none;
+      border-radius: 5px;
+      transition: background-color 0.3s;
+    }
+    .auth-header a:hover {
+      background-color: #45a049;
     }
     /* Custom styling for player details */
     .player-details-section {
@@ -130,6 +159,10 @@
       <img src="vlr.png" alt="Match List">
       Match List  
     </a>
+    <a href="#" onclick="redirectWithFade(event, 'tournaments.html')">
+      <img src="vlr.png" alt="Tournaments">
+      Tournaments
+    </a>
     <a href="#" class="active" onclick="redirectWithFade(event, 'teams.html')">
       <img src="vlr.png" alt="Teams and Players">
       Teams and Players
@@ -138,13 +171,60 @@
       <img src="vlr.png" alt="Forums">
       Forums
     </a>
+    <div class="profile-btn" id="profile-btn" style="display:none;">
+      <img src="vlr.png" alt="Profile">
+      Profile
+    </div>
   </div>
 
   <div class="main-content fade-container fade-in">
+    <div class="auth-header" id="auth-header" style="display: none;">
+      <a href="login.html">Login</a>
+      <a href="signup.html">Sign Up</a>
+    </div>
     <div id="player-details">
       <p>Loading player details...</p>
     </div>
   </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script>
+    // Initialize Firebase (use your project's config)
+    const firebaseConfig = {
+      apiKey: "AIzaSyBHWSNutBOPFX3TRglJJvfF4w-6yGw54UA",
+      authDomain: "ylrgg-8eeda.firebaseapp.com",
+      projectId: "ylrgg-8eeda",
+      storageBucket: "ylrgg-8eeda.firebasestorage.app",
+      messagingSenderId: "794115830681",
+      appId: "1:794115830681:web:78be65e7fd4319d1d0d908",
+      measurementId: "G-88L9L9VEKG"
+    }
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    // Check auth state and update UI accordingly
+    firebase.auth().onAuthStateChanged((user) => {
+      const authHeader = document.getElementById('auth-header');
+      const profileBtn = document.getElementById('profile-btn');
+      if (user) {
+        // Hide login and sign up buttons
+        authHeader.style.display = 'none';
+        // Show profile button with user's photo
+        profileBtn.style.display = 'block';
+        profileBtn.querySelector('img').src = user.photoURL || 'default-profile.png';
+      } else {
+        // Show login/sign-up header
+        authHeader.style.display = 'flex';
+        profileBtn.style.display = 'none';
+      }
+    });
+
+    // When the profile button is clicked, navigate to profile.html
+    document.getElementById('profile-btn').addEventListener('click', () => {
+      window.location.href = 'profile.html';
+    });
+  </script>
 
   <script>
     // Sidebar and fade functions

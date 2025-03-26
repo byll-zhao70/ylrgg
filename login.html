@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login - Teams</title>
+  <style>
+    /* Reuse the same styles as index.html */
+    body {
+      display: flex;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      height: 100vh;
+      background-color: #1e1e1e;
+      color: #e0e0e0;
+    }
+    .sidebar {
+      width: 80px;
+      background-color: #151515;
+      color: white;
+      padding: 10px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .sidebar a {
+      text-decoration: none;
+      color: white;
+      margin: 10px 0;
+      padding: 10px 0;
+      width: 100%;
+      text-align: center;
+      border-radius: 5px;
+      transition: background-color 0.3s, transform 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .sidebar a img {
+      width: 24px;
+      height: 24px;
+      margin-bottom: 5px;
+    }
+    
+    .sidebar a:hover {
+      background-color: #444;
+      transform: scale(1.05);
+    }
+    
+    .sidebar a.active {
+      background-color: #4caf50;
+    }
+    .main-content {
+      flex-grow: 1;
+      padding: 20px;
+      width: calc(100% - 80px);
+    }
+    /* Form styling */
+    .auth-container {
+      max-width: 400px;
+      margin: 50px auto;
+      background-color: #2b2b2b;
+      padding: 20px;
+      border-radius: 10px;
+    }
+    .auth-container h2 {
+      color: #4caf50;
+      text-align: center;
+    }
+    .auth-container input {
+      width: 95%;
+      padding: 10px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 5px;
+    }
+    .auth-container button {
+      width: 100%;
+      padding: 10px;
+      background-color: #4caf50;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .auth-container button:hover {
+      background-color: #45a049;
+    }
+    .auth-container .google-btn {
+      background-color: #db4437;
+    }
+    .auth-container .google-btn:hover {
+      background-color: #c33d2e;
+    }
+    .auth-container .switch-auth {
+      text-align: center;
+      margin-top: 15px;
+    }
+    .auth-container .switch-auth a {
+      color: #4caf50;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <a href="index.html" id="home">
+      <img src="vlr.png" alt="Home">
+      Home
+    </a>
+    <a href="matches.html" id="matches">
+      <img src="vlr.png" alt="Match List">
+      Match List  
+    </a>
+    <a href="tournaments.html" id="tournaments">
+      <img src="vlr.png" alt="Tournaments">
+      Tournaments
+    </a>    
+    <a href="teams.html" id="teams">
+      <img src="vlr.png" alt="Teams and Players">
+      Teams and Players
+    </a>
+    <a href="forums.html" id="forums">
+      <img src="vlr.png" alt="Forums">
+      Forums
+    </a>
+  </div>
+  <div class="main-content">
+    <div class="auth-container">
+      <h2>Login</h2>
+      <input type="email" id="login-email" placeholder="Email" required>
+      <input type="password" id="login-password" placeholder="Password" required>
+      <button id="login-btn">Login with Email</button>
+      <button id="google-login-btn" class="google-btn">Login with Google</button>
+      <div class="switch-auth">
+        Don't have an account? <a href="signup.html">Sign Up</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase App (the core Firebase SDK) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <!-- Firebase Authentication -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script>
+    // Replace with your Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyBHWSNutBOPFX3TRglJJvfF4w-6yGw54UA",
+      authDomain: "ylrgg-8eeda.firebaseapp.com",
+      projectId: "ylrgg-8eeda",
+      storageBucket: "ylrgg-8eeda.firebasestorage.app",
+      messagingSenderId: "794115830681",
+      appId: "1:794115830681:web:78be65e7fd4319d1d0d908",
+      measurementId: "G-88L9L9VEKG"
+    }
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    // Email login
+    document.getElementById('login-btn').addEventListener('click', () => {
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+      auth.signInWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+          window.location.href = 'index.html';
+          // Redirect or update UI as needed
+        })
+        .catch((error) => {
+          alert('Error: ' + error.message);
+        });
+    });
+
+    // Google login
+    document.getElementById('google-login-btn').addEventListener('click', () => {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider)
+        .then((result) => {
+          window.location.href = 'index.html';
+          // Redirect or update UI as needed
+        })
+        .catch((error) => {
+          alert('Error: ' + error.message);
+        });
+    });
+  </script>
+</body>
+</html>

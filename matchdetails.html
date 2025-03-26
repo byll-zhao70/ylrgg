@@ -45,7 +45,7 @@
       height: 100vh;
       overflow: hidden;
     }
-
+    
     .sidebar a {
       text-decoration: none;
       color: white;
@@ -59,20 +59,32 @@
       flex-direction: column;
       align-items: center;
     }
-
+    
     .sidebar a img {
       width: 24px;
       height: 24px;
       margin-bottom: 5px;
     }
-
+    
     .sidebar a:hover {
       background-color: #444;
       transform: scale(1.05);
     }
-
+    
     .sidebar a.active {
       background-color: #4caf50;
+    }
+    .profile-btn {
+      margin-bottom: 10px;
+      cursor: pointer;
+      width: 100%;
+      text-align: center;
+    }
+    .profile-btn img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 2px solid #4caf50;
     }
 
     /* Main content area */
@@ -113,32 +125,60 @@
     .back-button:hover {
       background-color: #45a049;
     }
+    /* Auth header for login/sign-up */
+    .auth-header {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .auth-header a {
+      background-color: #4caf50;
+      color: white;
+      padding: 10px 20px;
+      text-decoration: none;
+      border-radius: 5px;
+      transition: background-color 0.3s;
+    }
+    .auth-header a:hover {
+      background-color: #45a049;
+    }
   </style>
 </head>
 <body>
   <div class="sidebar">
-    <a href="index.html" id="home">
+    <a href="#" onclick="redirectWithFade(event, 'index.html')">
       <img src="vlr.png" alt="Home">
       Home
     </a>
-    <a href="matches.html" id="matches">
+    <a href="#" class="active" onclick="redirectWithFade(event, 'matches.html')">
       <img src="vlr.png" alt="Match List">
       Match List  
     </a>
-    <a href="tournaments.html" id="tournaments">
+    <a href="#" onclick="redirectWithFade(event, 'tournaments.html')">
       <img src="vlr.png" alt="Tournaments">
       Tournaments
-    </a>    
-    <a href="teams.html" id="teams">
+    </a>
+    <a href="#" onclick="redirectWithFade(event, 'teams.html')">
       <img src="vlr.png" alt="Teams and Players">
       Teams and Players
     </a>
-    <a href="forums.html" id="forums">
+    <a href="#" onclick="redirectWithFade(event, 'forums.html')">
       <img src="vlr.png" alt="Forums">
       Forums
     </a>
+    <!-- Profile button appears here if the user is logged in -->
+    <div class="profile-btn" id="profile-btn" style="display:none;">
+      <img src="default-profile.png" alt="Profile">
+      Profile
+    </div>
 </div>
+
   <div class="main-content fade-container fade-in">
+    <div class="auth-header" id="auth-header" style="display: none;">
+      <a href="login.html">Login</a>
+      <a href="signup.html">Sign Up</a>
+    </div>
     <h1>Match Details</h1>
     <div class="match-details" id="match-details">
       <!-- Match details will be inserted here -->
@@ -151,7 +191,45 @@
 <div id="match-details"></div>
 
     <button class="back-button" onclick="window.history.back()">Back</button>
-  </div>
+</div>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script>
+    // Initialize Firebase (use your project's config)
+    const firebaseConfig = {
+      apiKey: "AIzaSyBHWSNutBOPFX3TRglJJvfF4w-6yGw54UA",
+      authDomain: "ylrgg-8eeda.firebaseapp.com",
+      projectId: "ylrgg-8eeda",
+      storageBucket: "ylrgg-8eeda.firebasestorage.app",
+      messagingSenderId: "794115830681",
+      appId: "1:794115830681:web:78be65e7fd4319d1d0d908",
+      measurementId: "G-88L9L9VEKG"
+    }
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    // Check auth state and update UI accordingly
+    firebase.auth().onAuthStateChanged((user) => {
+      const authHeader = document.getElementById('auth-header');
+      const profileBtn = document.getElementById('profile-btn');
+      if (user) {
+        // Hide login and sign up buttons
+        authHeader.style.display = 'none';
+        // Show profile button with user's photo
+        profileBtn.style.display = 'block';
+        profileBtn.querySelector('img').src = user.photoURL || 'default-profile.png';
+      } else {
+        // Show login/sign-up header
+        authHeader.style.display = 'flex';
+        profileBtn.style.display = 'none';
+      }
+    });
+
+    // When the profile button is clicked, navigate to profile.html
+    document.getElementById('profile-btn').addEventListener('click', () => {
+      window.location.href = 'profile.html';
+    });
+    </script>
   <script>
 async function fetchMatchDetails() {
     const urlParams = new URLSearchParams(window.location.search);

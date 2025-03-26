@@ -167,7 +167,7 @@
       auth.createUserWithEmailAndPassword(email, password)
         .then((userCredential) => {
           alert('Account created successfully!');
-          // Redirect or update UI as needed
+          window.location.href = 'login.html';
         })
         .catch((error) => {
           alert('Error: ' + error.message);
@@ -180,7 +180,7 @@
       auth.signInWithPopup(provider)
         .then((result) => {
           alert('Signed up with Google!');
-          // Redirect or update UI as needed
+          window.location.href = 'login.html';
         })
         .catch((error) => {
           alert('Error: ' + error.message);

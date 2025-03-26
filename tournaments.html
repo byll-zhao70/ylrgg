@@ -214,7 +214,7 @@
         authHeader.style.display = 'none';
         // Show profile button with user's photo
         profileBtn.style.display = 'block';
-        profileBtn.querySelector('img').src = user.photoURL || 'default-profile.png';
+        profileBtn.querySelector('img').src = user.photoURL || 'vlr.png';
       } else {
         // Show login/sign-up header
         authHeader.style.display = 'flex';
@@ -226,7 +226,7 @@
     document.getElementById('profile-btn').addEventListener('click', () => {
       window.location.href = 'profile.html';
     });
-    
+
     function redirectWithFade(event, destination) {
       event.preventDefault(); // Prevent immediate navigation
       // Add the fade-out class to the main content container (not the sidebar)

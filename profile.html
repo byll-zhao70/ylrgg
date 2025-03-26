@@ -161,7 +161,7 @@
         </a>
       <!-- Profile button appears here if the user is logged in -->
       <div class="profile-btn" id="profile-btn" style="display:none;">
-        <img src="default-profile.png" alt="Profile">
+        <img src="vlr.png" alt="Profile">
         Profile
       </div>
   </div>
@@ -209,7 +209,7 @@
         document.getElementById('user-username').innerText = user.displayName || "N/A";
         profilePic.src = user.photoURL || 'vlr.png';
         profileBtn.style.display = 'block';
-        profileBtn.querySelector('img').src = user.photoURL || 'default-profile.png';
+        profileBtn.querySelector('img').src = user.photoURL || 'vlr.png';
       } else {
         window.location.href = 'login.html';
       }

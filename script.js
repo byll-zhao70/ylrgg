@@ -1,5 +1,5 @@
 // URL of the initial API request (replace with the actual URL)
-const apiUrl = 'https://vlr.orlandomm.net/api/v1/teams';
+const apiUrl = 'https://raw.githubusercontent.com/byll-zhao70/ylrgg/main/team_data/';
 
 let currentRegion = 'na';
 
@@ -55,7 +55,7 @@ async function getAllTeamsByRegion(region) {
     let allTeams = null;
     try {
         // GET request to the current page's URL
-        const response = await fetch(`${apiUrl}?region=${region}&limit=all`);
+        const response = await fetch(`${apiUrl}${region}_teams.json`);
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);

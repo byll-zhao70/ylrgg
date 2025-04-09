@@ -138,6 +138,119 @@
 .like-icon {
   font-size: 20px;
 }
+/* Styles for replies */
+.replies-section {
+  margin-top: 10px;
+  margin-left: 20px;
+  border-left: 2px solid #4caf50;
+  padding-left: 15px;
+}
+
+.reply {
+  background-color: #333;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.reply-username {
+  font-weight: bold;
+  color: #4caf50;
+}
+
+.reply-content {
+  margin-top: 5px;
+}
+
+.reply-form {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.reply-input {
+  padding: 8px;
+  border: 1px solid #444;
+  border-radius: 5px;
+  background-color: #2b2b2b;
+  color: #e0e0e0;
+  resize: vertical;
+  min-height: 60px;
+}
+
+.reply-btn {
+  align-self: flex-start;
+  margin-top: 8px;
+  padding: 5px 15px;
+  background-color: #4caf50;
+  border: none;
+  border-radius: 5px;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.reply-btn:hover {
+  background-color: #45a049;
+}
+
+.reply-toggle {
+  margin-top: 10px;
+  cursor: pointer;
+  color: #4caf50;
+  background: none;
+  border: none;
+  padding: 5px;
+  font-size: 14px;
+  text-decoration: underline;
+}
+.reply {
+  position: relative; /* For positioning the like button */
+}
+
+.reply-footer {
+  display: flex;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.reply-like-button {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px;
+  background: transparent;
+  border: none;
+  color: #e0e0e0;
+  cursor: pointer;
+  font-size: 14px;
+  transition: transform 0.2s;
+}
+
+.reply-like-button:hover {
+  transform: scale(1.1);
+}
+.reply {
+  background-color: #333;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.reply-username {
+  font-weight: bold;
+  color: #4caf50;
+  margin-bottom: 5px;
+}
+
+.reply-content {
+  margin-bottom: 8px;
+}
+
+/* Add a bit of extra spacing between replies */
+.replies-container .reply:not(:last-child) {
+  margin-bottom: 12px;
+}
   </style>
 </head>
 <body>
@@ -248,12 +361,33 @@
     
     // Only allow like functionality if user is logged in
     if (currentUser) {
-      likeButton.onclick = () => toggleLike(post.id, post.userId, hasLiked);
+      likeButton.onclick = (e) => {
+        e.stopPropagation(); // Prevent post click from triggering
+        toggleLike(post.id, post.userId, hasLiked);
+      }
     } else {
-      likeButton.onclick = () => alert('Please log in to like posts');
+      likeButton.onclick = (e) => {
+        e.stopPropagation(); // Prevent post click from triggering
+        alert('Please log in to like posts');
+      }
     }
     
     postFooter.appendChild(likeButton);
+
+    // Replies Counter / Toggle Button
+    const replyCount = post.replyCount || 0;
+    const replyToggle = document.createElement('button');
+    replyToggle.className = 'reply-toggle';
+    replyToggle.textContent = replyCount > 0 ? 
+      `View ${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}` : 
+      'Reply';
+      
+    replyToggle.onclick = (e) => {
+      e.stopPropagation();
+      toggleReplies(postDiv, post.id);
+    };
+    
+    postFooter.appendChild(replyToggle);
     
     // Add delete button if the current user is the author
     if (currentUser && currentUser.uid === post.userId) {
@@ -268,7 +402,10 @@
       deleteButton.style.padding = '5px 10px';
       
       // Attach delete functionality
-      deleteButton.onclick = () => deletePost(post.id);
+      deleteButton.onclick = (e) => {
+        e.stopPropagation();
+        deletePost(post.id);
+      }
       
       postFooter.appendChild(deleteButton);
     }
@@ -278,14 +415,64 @@
     postDiv.appendChild(postContent);
     postDiv.appendChild(postFooter);
     
+    // Create hidden replies section
+    const repliesSection = document.createElement('div');
+    repliesSection.className = 'replies-section';
+    repliesSection.style.display = 'none';
+    repliesSection.innerHTML = `
+      <div class="replies-container" id="replies-${post.id}">
+        <p>Loading replies...</p>
+      </div>
+    `;
+    
+    // Only show reply form if user is logged in
+    if (currentUser) {
+      const replyForm = document.createElement('div');
+      replyForm.className = 'reply-form';
+      replyForm.innerHTML = `
+        <textarea class="reply-input" placeholder="Write your reply..."></textarea>
+        <button class="reply-btn">Post Reply</button>
+      `;
+      
+      // Add reply functionality
+      replyForm.querySelector('.reply-btn').onclick = (e) => {
+        e.preventDefault();
+        const replyContent = replyForm.querySelector('.reply-input').value.trim();
+        if (replyContent) {
+          addReply(post.id, replyContent);
+          replyForm.querySelector('.reply-input').value = '';
+        }
+      };
+      
+      repliesSection.appendChild(replyForm);
+    }
+    
+    postDiv.appendChild(repliesSection);
+    
     container.appendChild(postDiv);
   });
 }
 
-// Function to delete a post
 async function deletePost(postId) {
   try {
+    // First delete all replies
+    const repliesSnapshot = await db.collection('forum-posts')
+                                   .doc(postId)
+                                   .collection('replies')
+                                   .get();
+    
+    // Use batch delete for replies
+    const batch = db.batch();
+    
+    repliesSnapshot.docs.forEach(doc => {
+      batch.delete(doc.ref);
+    });
+    
+    await batch.commit();
+    
+    // Then delete the post itself
     await db.collection('forum-posts').doc(postId).delete();
+    
     alert('Post deleted successfully.');
     loadPosts(); // Reload posts to reflect the deletion
   } catch (error) {
@@ -293,17 +480,29 @@ async function deletePost(postId) {
     alert('Failed to delete post. Please try again.');
   }
 }
-// Function to toggle like on a post and update points
 async function toggleLike(postId, postAuthorId, hasLiked) {
   try {
     const currentUser = firebase.auth().currentUser;
     if (!currentUser) return alert('You must be logged in to like posts');
     
+    // First get the latest state of the post to ensure we have accurate like data
     const postRef = db.collection('forum-posts').doc(postId);
     const postDoc = await postRef.get();
     
     if (!postDoc.exists) {
       return alert('Post not found');
+    }
+    
+    // Get the current likedBy array to check if user has already liked
+    const postData = postDoc.data();
+    const likedBy = postData.likedBy || [];
+    const currentUserLiked = likedBy.includes(currentUser.uid);
+    
+    // Use the current state from database rather than UI state
+    // This ensures we have the correct state even after re-login
+    if (hasLiked !== currentUserLiked) {
+      console.warn("Like state inconsistency detected. Using database state.");
+      hasLiked = currentUserLiked;
     }
     
     const batch = db.batch();
@@ -315,6 +514,25 @@ async function toggleLike(postId, postAuthorId, hasLiked) {
         likes: firebase.firestore.FieldValue.increment(-1),
         likedBy: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
       });
+      
+      // Only remove points if the user actually had liked it previously
+      if (postAuthorId !== currentUser.uid) {
+        const authorRef = db.collection('users').doc(postAuthorId);
+        batch.update(authorRef, {
+          points: firebase.firestore.FieldValue.increment(-1)
+        });
+        
+        // Track this unlike
+        const activityRef = db.collection('users').doc(postAuthorId).collection('activity').doc();
+        batch.set(activityRef, {
+          type: 'like_removed',
+          postId: postId,
+          fromUserId: currentUser.uid,
+          fromUsername: currentUser.displayName || 'Anonymous',
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          pointsChanged: -1
+        });
+      }
     } else {
       // Like the post
       batch.update(postRef, {
@@ -322,15 +540,14 @@ async function toggleLike(postId, postAuthorId, hasLiked) {
         likedBy: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
       });
       
-      // Add a point to the post author's account
-      // Only if the liker is not the same as the author
+      // Add points only if user hasn't already liked
       if (postAuthorId !== currentUser.uid) {
         const authorRef = db.collection('users').doc(postAuthorId);
         batch.update(authorRef, {
           points: firebase.firestore.FieldValue.increment(1)
         });
         
-        // Track this like in the user's activity
+        // Track this like
         const activityRef = db.collection('users').doc(postAuthorId).collection('activity').doc();
         batch.set(activityRef, {
           type: 'like_received',
@@ -353,8 +570,290 @@ async function toggleLike(postId, postAuthorId, hasLiked) {
     alert('Failed to update like. Please try again.');
   }
 }
+// Toggle replies visibility and load them if needed
+function toggleReplies(postDiv, postId) {
+  const repliesSection = postDiv.querySelector('.replies-section');
+  
+  if (repliesSection.style.display === 'none') {
+    repliesSection.style.display = 'block';
+    loadReplies(postId);
+  } else {
+    repliesSection.style.display = 'none';
+  }
+}
 
-    // Load posts from Firestore
+// Load replies for a specific post
+async function loadReplies(postId) {
+  const repliesContainer = document.getElementById(`replies-${postId}`);
+  const currentUser = firebase.auth().currentUser;
+  
+  try {
+    const repliesSnapshot = await db.collection('forum-posts')
+                                   .doc(postId)
+                                   .collection('replies')
+                                   .orderBy('timestamp', 'asc')
+                                   .get();
+    
+    if (repliesSnapshot.empty) {
+      repliesContainer.innerHTML = '<p>No replies yet.</p>';
+      return;
+    }
+    
+    repliesContainer.innerHTML = '';
+    
+    repliesSnapshot.forEach(doc => {
+      const reply = doc.data();
+      const replyId = doc.id;
+      const replyDiv = document.createElement('div');
+      replyDiv.className = 'reply';
+      
+      // Check if the current user has liked this reply
+      const hasLiked = reply.likedBy && reply.likedBy.includes(currentUser?.uid);
+      
+      // Create a structured reply with header, content and footer
+      const replyHeader = document.createElement('div');
+      replyHeader.className = 'reply-username';
+      replyHeader.textContent = reply.username;
+      
+      const replyContent = document.createElement('div');
+      replyContent.className = 'reply-content';
+      replyContent.textContent = reply.content;
+      
+      const replyFooter = document.createElement('div');
+      replyFooter.className = 'reply-footer';
+      
+      // Create the like button
+      const likeButton = document.createElement('button');
+      likeButton.className = 'reply-like-button';
+      likeButton.innerHTML = `
+        <span class="like-icon">${hasLiked ? '❤️' : '🤍'}</span>
+        <span class="like-count">${reply.likes || 0}</span>
+      `;
+      
+      if (currentUser) {
+        likeButton.onclick = (e) => {
+          e.stopPropagation();
+          toggleReplyLike(postId, replyId, reply.userId, hasLiked);
+        };
+      } else {
+        likeButton.disabled = true;
+        likeButton.style.cursor = 'default';
+        likeButton.title = 'Login to like replies';
+      }
+      
+      // Assemble the reply
+      replyFooter.appendChild(likeButton);
+      if (currentUser && currentUser.uid === reply.userId) {
+      const deleteButton = document.createElement('button');
+      deleteButton.textContent = 'Delete';
+      deleteButton.className = 'delete-reply-btn';
+      deleteButton.style.marginLeft = '10px';
+      deleteButton.style.backgroundColor = '#e74c3c';
+      deleteButton.style.color = 'white';
+      deleteButton.style.border = 'none';
+      deleteButton.style.borderRadius = '5px';
+      deleteButton.style.cursor = 'pointer';
+      deleteButton.style.padding = '3px 8px';
+      deleteButton.style.fontSize = '12px';
+      
+      deleteButton.onclick = (e) => {
+        e.stopPropagation();
+        deleteReply(postId, replyId);
+      };
+      
+      replyFooter.appendChild(deleteButton);
+    }
+      replyDiv.appendChild(replyHeader);
+      replyDiv.appendChild(replyContent);
+      replyDiv.appendChild(replyFooter);
+      
+      repliesContainer.appendChild(replyDiv);
+    });
+    
+  } catch (error) {
+    console.error('Error loading replies:', error);
+    repliesContainer.innerHTML = '<p>Error loading replies.</p>';
+  }
+}
+
+// Add a new reply
+async function addReply(postId, content) {
+  const user = firebase.auth().currentUser;
+  if (!user) {
+    alert('You must be logged in to reply to posts.');
+    return;
+  }
+  
+  try {
+    // Add reply to subcollection
+    await db.collection('forum-posts').doc(postId).collection('replies').add({
+      content: content,
+      userId: user.uid,
+      username: user.displayName || 'Anonymous',
+      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+      likes: 0,        // Initialize likes counter for the reply
+      likedBy: []      // Initialize array to track who liked the reply
+    });
+    
+    // Update reply count on the parent post using a transaction
+    await db.runTransaction(async (transaction) => {
+      const postRef = db.collection('forum-posts').doc(postId);
+      const postDoc = await transaction.get(postRef);
+      
+      if (!postDoc.exists) {
+        throw "Post does not exist!";
+      }
+      
+      const currentCount = postDoc.data().replyCount || 0;
+      transaction.update(postRef, { replyCount: currentCount + 1 });
+    });
+    
+    // Reload replies to show the new one
+    loadReplies(postId);
+    
+    // Update the reply count displayed on the toggle button
+    const postContainer = document.querySelector(`#replies-${postId}`).closest('.forum-post');
+    const replyToggle = postContainer.querySelector('.reply-toggle');
+    const newCount = parseInt(replyToggle.textContent.split(' ')[1] || 0) + 1;
+    replyToggle.textContent = `View ${newCount} ${newCount === 1 ? 'reply' : 'replies'}`;
+    
+  } catch (error) {
+    console.error('Error adding reply:', error);
+    alert('Failed to add reply. Please try again.');
+  }
+}
+// Function to delete a reply
+async function deleteReply(postId, replyId) {
+  try {
+    // Delete the reply
+    await db.collection('forum-posts').doc(postId).collection('replies').doc(replyId).delete();
+    
+    // Update the reply count on the parent post
+    await db.runTransaction(async (transaction) => {
+      const postRef = db.collection('forum-posts').doc(postId);
+      const postDoc = await transaction.get(postRef);
+      
+      if (!postDoc.exists) {
+        throw "Post does not exist!";
+      }
+      
+      const currentCount = postDoc.data().replyCount || 0;
+      if (currentCount > 0) {
+        transaction.update(postRef, { replyCount: currentCount - 1 });
+      }
+    });
+    
+    // Update the UI
+    loadReplies(postId);
+    
+    // Update the reply count displayed on the toggle button
+    const postContainer = document.querySelector(`#replies-${postId}`).closest('.forum-post');
+    const replyToggle = postContainer.querySelector('.reply-toggle');
+    const currentCount = parseInt(replyToggle.textContent.split(' ')[1] || 0);
+    const newCount = Math.max(0, currentCount - 1);
+    
+    if (newCount === 0) {
+      replyToggle.textContent = 'Reply';
+    } else {
+      replyToggle.textContent = `View ${newCount} ${newCount === 1 ? 'reply' : 'replies'}`;
+    }
+    
+  } catch (error) {
+    console.error('Error deleting reply:', error);
+    alert('Failed to delete reply. Please try again.');
+  }
+}
+async function toggleReplyLike(postId, replyId, replyAuthorId, hasLiked) {
+  try {
+    const currentUser = firebase.auth().currentUser;
+    if (!currentUser) return alert('You must be logged in to like replies');
+    
+    // First get the latest state of the reply
+    const replyRef = db.collection('forum-posts').doc(postId).collection('replies').doc(replyId);
+    const replyDoc = await replyRef.get();
+    
+    if (!replyDoc.exists) {
+      return alert('Reply not found');
+    }
+    
+    // Get the current likedBy array to check if user has already liked
+    const replyData = replyDoc.data();
+    const likedBy = replyData.likedBy || [];
+    const currentUserLiked = likedBy.includes(currentUser.uid);
+    
+    // Use the current state from database rather than UI state
+    if (hasLiked !== currentUserLiked) {
+      console.warn("Reply like state inconsistency detected. Using database state.");
+      hasLiked = currentUserLiked;
+    }
+    
+    const batch = db.batch();
+    
+    // Update reply's likes and likedBy array
+    if (hasLiked) {
+      // Unlike the reply
+      batch.update(replyRef, {
+        likes: firebase.firestore.FieldValue.increment(-1),
+        likedBy: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
+      });
+      
+      // Only remove points if the user actually had liked it previously
+      if (replyAuthorId !== currentUser.uid) {
+        const authorRef = db.collection('users').doc(replyAuthorId);
+        batch.update(authorRef, {
+          points: firebase.firestore.FieldValue.increment(-1)
+        });
+        
+        // Track this unlike
+        const activityRef = db.collection('users').doc(replyAuthorId).collection('activity').doc();
+        batch.set(activityRef, {
+          type: 'reply_like_removed',
+          postId: postId,
+          replyId: replyId,
+          fromUserId: currentUser.uid,
+          fromUsername: currentUser.displayName || 'Anonymous',
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          pointsChanged: -1
+        });
+      }
+    } else {
+      // Like the reply
+      batch.update(replyRef, {
+        likes: firebase.firestore.FieldValue.increment(1),
+        likedBy: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+      });
+      
+      // Add points only if user hasn't already liked
+      if (replyAuthorId !== currentUser.uid) {
+        const authorRef = db.collection('users').doc(replyAuthorId);
+        batch.update(authorRef, {
+          points: firebase.firestore.FieldValue.increment(1)
+        });
+        
+        // Track this like
+        const activityRef = db.collection('users').doc(replyAuthorId).collection('activity').doc();
+        batch.set(activityRef, {
+          type: 'reply_like_received',
+          postId: postId,
+          replyId: replyId,
+          fromUserId: currentUser.uid,
+          fromUsername: currentUser.displayName || 'Anonymous',
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          pointsEarned: 1
+        });
+      }
+    }
+    
+    await batch.commit();
+    
+    // Reload replies to show the updated like state
+    loadReplies(postId);
+    
+  } catch (error) {
+    console.error('Error toggling reply like:', error);
+    alert('Failed to update like. Please try again.');
+  }
+}
 // Load posts from Firestore
 async function loadPosts() {
   try {
@@ -366,7 +865,8 @@ async function loadPosts() {
       id: doc.id, 
       ...doc.data(),
       likes: doc.data().likes || 0,
-      likedBy: doc.data().likedBy || []
+      likedBy: doc.data().likedBy || [],
+      replyCount: doc.data().replyCount || 0
     }));
     
     renderPosts(posts);
@@ -397,7 +897,6 @@ async function loadPosts() {
       }
     });
 
-    // Handle form submission
 // Handle form submission
 document.getElementById('create-post-form').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -414,7 +913,8 @@ document.getElementById('create-post-form').addEventListener('submit', async (e)
       username: user.displayName || 'Anonymous',
       timestamp: firebase.firestore.FieldValue.serverTimestamp(),
       likes: 0,        // Initialize likes counter
-      likedBy: []      // Initialize array to track who liked the post
+      likedBy: [],     // Initialize array to track who liked the post
+      replyCount: 0    // Initialize reply counter
     });
     document.getElementById('post-content').value = ''; // Clear the textarea
     loadPosts(); // Reload posts to reflect the new one

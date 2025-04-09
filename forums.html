@@ -103,6 +103,41 @@
       background-color: #444;
       transform: scale(1.02);
     }
+    .post-header {
+  margin-bottom: 10px;
+  font-size: 18px;
+}
+
+.post-content {
+  margin-bottom: 15px;
+}
+
+.post-footer {
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.like-button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  background: transparent;
+  border: none;
+  color: #e0e0e0;
+  cursor: pointer;
+  font-size: 16px;
+  transition: transform 0.2s;
+}
+
+.like-button:hover {
+  transform: scale(1.1);
+}
+
+.like-icon {
+  font-size: 20px;
+}
   </style>
 </head>
 <body>
@@ -174,11 +209,53 @@
   posts.forEach(post => {
     const postDiv = document.createElement('div');
     postDiv.className = 'forum-post';
-
-    // Post content
-    postDiv.textContent = `${post.username}: ${post.content}`;
-
-    // Add a delete button if the current user is the author of the post
+    
+    // Create post header with username
+    const postHeader = document.createElement('div');
+    postHeader.className = 'post-header';
+    postHeader.innerHTML = `<strong>${post.username}</strong>`;
+    
+    // Create post content
+    const postContent = document.createElement('div');
+    postContent.className = 'post-content';
+    postContent.textContent = post.content;
+    
+    // Create post footer with likes and actions
+    const postFooter = document.createElement('div');
+    postFooter.className = 'post-footer';
+    
+    // Create like button and counter
+    const likeButton = document.createElement('button');
+    likeButton.className = 'like-button';
+    
+    // Check if current user has liked this post
+    const hasLiked = post.likedBy && post.likedBy.includes(currentUser?.uid);
+    
+    likeButton.innerHTML = `
+      <span class="like-icon">${hasLiked ? '❤️' : '🤍'}</span>
+      <span class="like-count">${post.likes || 0}</span>
+    `;
+    
+    // Style for like button
+    likeButton.style.background = 'transparent';
+    likeButton.style.border = 'none';
+    likeButton.style.color = '#e0e0e0';
+    likeButton.style.cursor = 'pointer';
+    likeButton.style.display = 'flex';
+    likeButton.style.alignItems = 'center';
+    likeButton.style.gap = '5px';
+    likeButton.style.fontSize = '16px';
+    
+    // Only allow like functionality if user is logged in
+    if (currentUser) {
+      likeButton.onclick = () => toggleLike(post.id, post.userId, hasLiked);
+    } else {
+      likeButton.onclick = () => alert('Please log in to like posts');
+    }
+    
+    postFooter.appendChild(likeButton);
+    
+    // Add delete button if the current user is the author
     if (currentUser && currentUser.uid === post.userId) {
       const deleteButton = document.createElement('button');
       deleteButton.textContent = 'Delete';
@@ -189,13 +266,18 @@
       deleteButton.style.borderRadius = '5px';
       deleteButton.style.cursor = 'pointer';
       deleteButton.style.padding = '5px 10px';
-
+      
       // Attach delete functionality
       deleteButton.onclick = () => deletePost(post.id);
-
-      postDiv.appendChild(deleteButton);
+      
+      postFooter.appendChild(deleteButton);
     }
-
+    
+    // Assemble the post elements
+    postDiv.appendChild(postHeader);
+    postDiv.appendChild(postContent);
+    postDiv.appendChild(postFooter);
+    
     container.appendChild(postDiv);
   });
 }
@@ -211,13 +293,88 @@ async function deletePost(postId) {
     alert('Failed to delete post. Please try again.');
   }
 }
+// Function to toggle like on a post and update points
+async function toggleLike(postId, postAuthorId, hasLiked) {
+  try {
+    const currentUser = firebase.auth().currentUser;
+    if (!currentUser) return alert('You must be logged in to like posts');
+    
+    const postRef = db.collection('forum-posts').doc(postId);
+    const postDoc = await postRef.get();
+    
+    if (!postDoc.exists) {
+      return alert('Post not found');
+    }
+    
+    const batch = db.batch();
+    
+    // Update post's likes and likedBy array
+    if (hasLiked) {
+      // Unlike the post
+      batch.update(postRef, {
+        likes: firebase.firestore.FieldValue.increment(-1),
+        likedBy: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
+      });
+    } else {
+      // Like the post
+      batch.update(postRef, {
+        likes: firebase.firestore.FieldValue.increment(1),
+        likedBy: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+      });
+      
+      // Add a point to the post author's account
+      // Only if the liker is not the same as the author
+      if (postAuthorId !== currentUser.uid) {
+        const authorRef = db.collection('users').doc(postAuthorId);
+        batch.update(authorRef, {
+          points: firebase.firestore.FieldValue.increment(1)
+        });
+        
+        // Track this like in the user's activity
+        const activityRef = db.collection('users').doc(postAuthorId).collection('activity').doc();
+        batch.set(activityRef, {
+          type: 'like_received',
+          postId: postId,
+          fromUserId: currentUser.uid,
+          fromUsername: currentUser.displayName || 'Anonymous',
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          pointsEarned: 1
+        });
+      }
+    }
+    
+    await batch.commit();
+    
+    // Reload posts to show the updated like state
+    loadPosts();
+    
+  } catch (error) {
+    console.error('Error toggling like:', error);
+    alert('Failed to update like. Please try again.');
+  }
+}
 
     // Load posts from Firestore
-    async function loadPosts() {
-      const postsSnapshot = await db.collection('forum-posts').orderBy('timestamp', 'desc').get();
-      const posts = postsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      renderPosts(posts);
-    }
+// Load posts from Firestore
+async function loadPosts() {
+  try {
+    const postsSnapshot = await db.collection('forum-posts')
+                             .orderBy('timestamp', 'desc')
+                             .get();
+                             
+    const posts = postsSnapshot.docs.map(doc => ({ 
+      id: doc.id, 
+      ...doc.data(),
+      likes: doc.data().likes || 0,
+      likedBy: doc.data().likedBy || []
+    }));
+    
+    renderPosts(posts);
+  } catch (error) {
+    console.error('Error loading posts:', error);
+    alert('Failed to load posts. Please refresh the page.');
+  }
+}
 
     // Handle authentication state changes
     firebase.auth().onAuthStateChanged((user) => {
@@ -241,28 +398,31 @@ async function deletePost(postId) {
     });
 
     // Handle form submission
-    document.getElementById('create-post-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const postContent = document.getElementById('post-content').value.trim();
-      if (!postContent) return alert('Post content cannot be empty.');
+// Handle form submission
+document.getElementById('create-post-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const postContent = document.getElementById('post-content').value.trim();
+  if (!postContent) return alert('Post content cannot be empty.');
 
-      const user = auth.currentUser;
-      if (!user) return alert('You must be logged in to create a post.');
+  const user = auth.currentUser;
+  if (!user) return alert('You must be logged in to create a post.');
 
-      try {
-        await db.collection('forum-posts').add({
-          content: postContent,
-          userId: user.uid,
-          username: user.displayName || 'Anonymous',
-          timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        document.getElementById('post-content').value = ''; // Clear the textarea
-        loadPosts(); // Reload posts to reflect the new one
-      } catch (error) {
-        console.error('Error creating post:', error);
-        alert('Failed to create post. Please try again.');
-      }
+  try {
+    await db.collection('forum-posts').add({
+      content: postContent,
+      userId: user.uid,
+      username: user.displayName || 'Anonymous',
+      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+      likes: 0,        // Initialize likes counter
+      likedBy: []      // Initialize array to track who liked the post
     });
+    document.getElementById('post-content').value = ''; // Clear the textarea
+    loadPosts(); // Reload posts to reflect the new one
+  } catch (error) {
+    console.error('Error creating post:', error);
+    alert('Failed to create post. Please try again.');
+  }
+});
 
     // Initial load of posts (if user is already logged in)
     loadPosts();

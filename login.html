@@ -132,6 +132,9 @@
 </head>
 <body>
   <div class="sidebar">
+    <div id="user-points" style="text-align: center; padding: 10px; margin-bottom: 10px; color: #4caf50; font-weight: bold;">
+      Points: --
+    </div>
     <a href="#" onclick="redirectWithFade(event, 'index.html')">
       <img src="home.png" alt="Home">
       Home
@@ -170,6 +173,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <!-- Firebase Authentication -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
   <script>
     // Replace with your Firebase config
     const firebaseConfig = {
@@ -184,33 +188,140 @@
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
 
-    // Email login
-    document.getElementById('login-btn').addEventListener('click', () => {
-      const email = document.getElementById('login-email').value;
-      const password = document.getElementById('login-password').value;
-      auth.signInWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-          window.location.href = 'index.html';
-          // Redirect or update UI as needed
-        })
-        .catch((error) => {
-          alert('Error: ' + error.message);
-        });
-    });
+    // Initialize Firestore
+const db = firebase.firestore();
 
-    // Google login
-    document.getElementById('google-login-btn').addEventListener('click', () => {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      auth.signInWithPopup(provider)
-        .then((result) => {
-          window.location.href = 'index.html';
-          // Redirect or update UI as needed
-        })
-        .catch((error) => {
-          alert('Error: ' + error.message);
+// Function to handle daily login rewards
+function handleDailyLoginReward(userId) {
+  const userRef = db.collection('users').doc(userId);
+  
+  return userRef.get().then((doc) => {
+    const currentDate = new Date().toISOString().split('T')[0]; // Get current date in YYYY-MM-DD format
+    
+    if (doc.exists) {
+      // User exists in database
+      const userData = doc.data();
+      const lastLoginDate = userData.lastLoginDate;
+      const currentPoints = userData.points || 0;
+      
+      // Check if this is a new day compared to last login
+      if (lastLoginDate !== currentDate) {
+        // It's a new day, award points
+        const newPoints = currentPoints + 5;
+        
+        // Update user data
+        return userRef.update({
+          lastLoginDate: currentDate,
+          points: newPoints,
+          loginStreak: (lastLoginDate === getPreviousDay(currentDate)) ? 
+                       (userData.loginStreak || 0) + 1 : 1
+        }).then(() => {
+          showRewardNotification(5, newPoints);
+          return newPoints;
         });
-    });
+      } else {
+        // Already logged in today
+        return currentPoints;
+      }
+    } else {
+      // New user, create profile and award first points
+      return userRef.set({
+        lastLoginDate: currentDate,
+        points: 5,
+        loginStreak: 1
+      }).then(() => {
+        showRewardNotification(5, 5);
+        return 5;
+      });
+    }
+  });
+}
 
+// Helper function to get previous day in YYYY-MM-DD format
+function getPreviousDay(dateString) {
+  const date = new Date(dateString);
+  date.setDate(date.getDate() - 1);
+  return date.toISOString().split('T')[0];
+}
+
+// Show notification to user about earned points
+function showRewardNotification(pointsEarned, totalPoints) {
+  // Create notification element
+  const notification = document.createElement('div');
+  notification.classList.add('reward-notification');
+  notification.innerHTML = `
+    <div class="reward-content">
+      <h3>Daily Login Bonus!</h3>
+      <p>+${pointsEarned} points awarded</p>
+      <p>Your total: ${totalPoints} points</p>
+    </div>
+  `;
+  
+  // Style the notification
+  notification.style.position = 'fixed';
+  notification.style.top = '20px';
+  notification.style.right = '20px';
+  notification.style.backgroundColor = '#4caf50';
+  notification.style.color = 'white';
+  notification.style.padding = '15px';
+  notification.style.borderRadius = '5px';
+  notification.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+  notification.style.zIndex = '1000';
+  notification.style.opacity = '0';
+  notification.style.transition = 'opacity 0.5s';
+  
+  // Add to body and fade in
+  document.body.appendChild(notification);
+  setTimeout(() => { notification.style.opacity = '1'; }, 100);
+  
+  // Remove after 5 seconds
+  setTimeout(() => {
+    notification.style.opacity = '0';
+    setTimeout(() => notification.remove(), 500);
+  }, 5000);
+}
+
+// Email login
+document.getElementById('login-btn').addEventListener('click', () => {
+  const email = document.getElementById('login-email').value;
+  const password = document.getElementById('login-password').value;
+  auth.signInWithEmailAndPassword(email, password)
+    .then((userCredential) => {
+      const userId = userCredential.user.uid;
+      return handleDailyLoginReward(userId).then(() => {
+        window.location.href = 'index.html';
+      });
+    })
+    .catch((error) => {
+      alert('Error: ' + error.message);
+    });
+});
+
+// Google login
+document.getElementById('google-login-btn').addEventListener('click', () => {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider)
+    .then((result) => {
+      const userId = result.user.uid;
+      return handleDailyLoginReward(userId).then(() => {
+        window.location.href = 'index.html';
+      });
+    })
+    .catch((error) => {
+      alert('Error: ' + error.message);
+    });
+});
+// Check auth state to update points display
+auth.onAuthStateChanged(user => {
+  if (user) {
+    db.collection('users').doc(user.uid).get().then(doc => {
+      if (doc.exists) {
+        const points = doc.data().points || 0;
+        document.getElementById('user-points').textContent = `Points: ${points}`;
+      }
+    });
+  }
+});
   </script>
   <script>
     function redirectWithFade(event, destination) {

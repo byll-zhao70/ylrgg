@@ -15,7 +15,6 @@
       color: #e0e0e0;
     }
     
-
     /* Sidebar styles */
     .sidebar {
       width: 80px;
@@ -55,6 +54,7 @@
     .sidebar a.active {
       background-color: #4caf50;
     }
+    
     /* Profile button container */
     .profile-btn {
       margin-bottom: 10px;
@@ -68,6 +68,7 @@
       border-radius: 50%;
       border: 2px solid #4caf50;
     }
+    
     /* Main content area */
     .main-content {
       flex-grow: 1;
@@ -75,6 +76,7 @@
       overflow-x: hidden;
       width: calc(100% - 80px);
     }
+    
     /* Auth header for login/sign-up */
     .auth-header {
       display: flex;
@@ -93,6 +95,7 @@
     .auth-header a:hover {
       background-color: #45a049;
     }
+    
     /* Section styling */
     .section {
       margin-bottom: 30px;
@@ -115,10 +118,16 @@
       text-align: center;
       transition: background-color 0.3s, transform 0.2s;
     }
+    .section .item img {
+      max-width: 100%;
+      height: auto;
+      margin-bottom: 5px;
+    }
     .section .item:hover {
       background-color: #444;
       transform: scale(1.05);
     }
+    
     .fade-container {
       transition: opacity 0.5s ease;
     }
@@ -172,39 +181,32 @@
       <a href="login.html">Login</a>
       <a href="signup.html">Sign Up</a>
     </div>
+    
     <!-- Upcoming Matches Section -->
     <div class="section" id="upcoming-matches">
       <h2>Upcoming Matches</h2>
-      <div class="items">
-        <div class="item" onclick="alert('Upcoming Match 1 clicked')">Match 1</div>
-        <div class="item" onclick="alert('Upcoming Match 2 clicked')">Match 2</div>
-        <div class="item" onclick="alert('Upcoming Match 3 clicked')">Match 3</div>
-        <div class="item" onclick="alert('Upcoming Match 4 clicked')">Match 4</div>
+      <div class="items" id="matches-container">
+        <!-- Dynamically loaded match items will appear here -->
       </div>
     </div>
-     <!-- Top Teams Section -->
-     <div class="section" id="top-teams">
+    
+    <!-- Top Teams Section -->
+    <div class="section" id="top-teams">
       <h2>Top Teams</h2>
-      <div class="items">
-        <div class="item" onclick="alert('Top Team A clicked')">Team A</div>
-        <div class="item" onclick="alert('Top Team B clicked')">Team B</div>
-        <div class="item" onclick="alert('Top Team C clicked')">Team C</div>
-        <div class="item" onclick="alert('Top Team D clicked')">Team D</div>
+      <div class="items" id="teams-container">
+        <!-- Dynamically loaded team items will appear here -->
       </div>
     </div>
     
     <!-- Top Players Section -->
     <div class="section" id="top-players">
       <h2>Top Players</h2>
-      <div class="items">
-        <div class="item" onclick="alert('Top Player 1 clicked')">Player 1</div>
-        <div class="item" onclick="alert('Top Player 2 clicked')">Player 2</div>
-        <div class="item" onclick="alert('Top Player 3 clicked')">Player 3</div>
-        <div class="item" onclick="alert('Top Player 4 clicked')">Player 4</div>
+      <div class="items" id="players-container">
+        <!-- Dynamically loaded player items will appear here -->
       </div>
     </div>
     
-    <!-- Top Posts Section -->
+    <!-- Top Posts Section (unchanged) -->
     <div class="section" id="top-posts">
       <h2>Top Posts</h2>
       <div class="items">
@@ -265,6 +267,7 @@
         }
       });
     });
+    
     function redirectWithFade(event, destination) {
       event.preventDefault(); // Prevent immediate navigation
       // Add the fade-out class to the main content container (not the sidebar)
@@ -274,6 +277,119 @@
       setTimeout(() => {
         window.location.href = destination;
       }, 500); // Delay matches the fade-out duration (0.5s)
+    }
+    
+    // -------------------------- Dynamic Content Loading --------------------------
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchMatches();
+      fetchTopTeams();
+      fetchTopPlayers();
+    });
+    
+    // Upcoming Matches Section
+    function fetchMatches() {
+      fetch("https://vlr.orlandomm.net/api/v1/matches")
+        .then(response => response.json())
+        .then(result => {
+          const matches = result.data;
+          const container = document.getElementById('matches-container');
+          // Clear any existing items
+          container.innerHTML = '';
+          // Show first four matches
+          matches.slice(0, 4).forEach(match => {
+            const matchItem = document.createElement('div');
+            matchItem.className = 'item';
+            // Build inner content:
+            // Match image
+            const img = document.createElement('img');
+            img.src = match.img;
+            img.alt = match.event;
+            matchItem.appendChild(img);
+            // Event and tournament text
+            const text = document.createElement('p');
+            text.textContent = `${match.event} - ${match.tournament}`;
+            matchItem.appendChild(text);
+            // Teams information (assuming two teams)
+            if (match.teams && match.teams.length >= 2) {
+              const teams = document.createElement('p');
+              teams.textContent = `${match.teams[0].name} vs ${match.teams[1].name}`;
+              matchItem.appendChild(teams);
+            }
+            // Match time (the "in" field)
+            const matchIn = document.createElement('p');
+            matchIn.textContent = match.in;
+            matchItem.appendChild(matchIn);
+            // Redirect on click
+            matchItem.addEventListener('click', () => {
+              window.location.href = `matchdetails.html?match-id=${match.id}`;
+            });
+            container.appendChild(matchItem);
+          });
+        })
+        .catch(error => console.error("Error fetching matches:", error));
+    }
+    
+    // Top Teams Section
+    function fetchTopTeams() {
+      const teamIds = [1034, 188, 2, 1001];
+      const container = document.getElementById('teams-container');
+      container.innerHTML = '';
+      teamIds.forEach(teamId => {
+        fetch(`https://vlr.orlandomm.net/api/v1/teams/${teamId}`)
+          .then(response => response.json())
+          .then(result => {
+            const teamData = result.data.info;
+            const teamItem = document.createElement('div');
+            teamItem.className = 'item';
+            // Create logo image
+            const logo = document.createElement('img');
+            logo.src = teamData.logo;
+            logo.alt = teamData.name;
+            teamItem.appendChild(logo);
+            // Team name text
+            const name = document.createElement('p');
+            name.textContent = teamData.name;
+            teamItem.appendChild(name);
+            // Redirect on click
+            teamItem.addEventListener('click', () => {
+              window.location.href = `team.html?teamid=${teamId}`;
+            });
+            container.appendChild(teamItem);
+          })
+          .catch(error => console.error(`Error fetching team ${teamId}:`, error));
+      });
+    }
+    
+    // Top Players Section
+    function fetchTopPlayers() {
+      const playerIds = [3885, 817, 1265, 18350];
+      const container = document.getElementById('players-container');
+      container.innerHTML = '';
+      playerIds.forEach(playerId => {
+        fetch(`https://vlr.orlandomm.net/api/v1/players/${playerId}`)
+          .then(response => response.json())
+          .then(result => {
+            const playerData = result.data.info;
+            const playerItem = document.createElement('div');
+            playerItem.className = 'item';
+            // Create player image
+            const img = document.createElement('img');
+            img.src = playerData.img;
+            img.alt = playerData.name;
+            playerItem.appendChild(img);
+            // Player name with user in parentheses
+            const name = document.createElement('p');
+            name.textContent = `${playerData.name} (${playerData.user})`;
+            playerItem.appendChild(name);
+            // Redirect on click
+            playerItem.addEventListener('click', () => {
+              window.location.href = `player.html?playerid=${playerId}`;
+            });
+            container.appendChild(playerItem);
+          })
+          .catch(error => console.error(`Error fetching player ${playerId}:`, error));
+      });
     }
   </script>
 </body>

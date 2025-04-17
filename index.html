@@ -221,6 +221,7 @@
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
   <script>
     // Initialize Firebase (use your project's config)
     const firebaseConfig = {
@@ -234,11 +235,13 @@
     }
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
+    const db = firebase.firestore();
 
     // Check auth state and update UI accordingly
     firebase.auth().onAuthStateChanged((user) => {
       const authHeader = document.getElementById('auth-header');
       const profileBtn = document.getElementById('profile-btn');
+      initializeTopLists(); 
       if (user) {
         // Hide login and sign up buttons
         authHeader.style.display = 'none';
@@ -280,12 +283,6 @@
     }
     
     // -------------------------- Dynamic Content Loading --------------------------
-    
-    document.addEventListener('DOMContentLoaded', () => {
-      fetchMatches();
-      fetchTopTeams();
-      fetchTopPlayers();
-    });
     
     // Upcoming Matches Section
     function fetchMatches() {
@@ -391,6 +388,93 @@
           .catch(error => console.error(`Error fetching player ${playerId}:`, error));
       });
     }
+
+    function loadTopTeams(teamIds) {
+      const container = document.getElementById('teams-container');
+      container.innerHTML = '';
+      teamIds.forEach(teamId => { fetch(`https://vlr.orlandomm.net/api/v1/teams/${teamId}`)
+          .then(response => response.json())
+          .then(result => {
+            const teamData = result.data.info;
+            const teamItem = document.createElement('div');
+            teamItem.className = 'item';
+            // Create logo image
+            const logo = document.createElement('img');
+            logo.src = teamData.logo;
+            logo.alt = teamData.name;
+            teamItem.appendChild(logo);
+            // Team name text
+            const name = document.createElement('p');
+            name.textContent = teamData.name;
+            teamItem.appendChild(name);
+            // Redirect on click
+            teamItem.addEventListener('click', () => {
+              window.location.href = `team.html?teamid=${teamId}`;
+            });
+            container.appendChild(teamItem);
+          })
+          .catch(error => console.error(`Error fetching team ${teamId}:`, error));
+         });
+    }
+
+    function loadTopPlayers(playerIds) {
+      const container = document.getElementById('players-container');
+      container.innerHTML = '';
+      playerIds.forEach(playerId => { fetch(`https://vlr.orlandomm.net/api/v1/players/${playerId}`)
+          .then(response => response.json())
+          .then(result => {
+            const playerData = result.data.info;
+            const playerItem = document.createElement('div');
+            playerItem.className = 'item';
+            // Create player image
+            const img = document.createElement('img');
+            img.src = playerData.img;
+            img.alt = playerData.name;
+            playerItem.appendChild(img);
+            // Player name with user in parentheses
+            const name = document.createElement('p');
+            name.textContent = `${playerData.name} (${playerData.user})`;
+            playerItem.appendChild(name);
+            // Redirect on click
+            playerItem.addEventListener('click', () => {
+              window.location.href = `player.html?playerid=${playerId}`;
+            });
+            container.appendChild(playerItem);
+          })
+          .catch(error => console.error(`Error fetching player ${playerId}:`, error));
+         });
+    }
+
+    function initializeTopLists() {
+      const DEFAULT_TEAMS   = [1034, 188, 2, 1001];
+      const DEFAULT_PLAYERS = [3885, 817, 1265, 18350];
+      const user = firebase.auth().currentUser;
+      if (user) {
+        // If there’s a logged‑in user, try to pull their favorites
+        db.collection('favorites').doc(user.uid).get()
+          .then(doc => {
+            const data = doc.exists ? doc.data() : {};
+            const teamIds   = (data.teams   && data.teams.length)   ? data.teams   : DEFAULT_TEAMS;
+            const playerIds = (data.players && data.players.length) ? data.players : DEFAULT_PLAYERS;
+            console.log(teamIds)
+            loadTopTeams(teamIds);
+            loadTopPlayers(playerIds);
+          })
+          .catch(err => {
+            console.error('Error loading favorites, falling back to defaults:', err);
+            loadTopTeams(DEFAULT_TEAMS);
+            loadTopPlayers(DEFAULT_PLAYERS);
+          });
+      } else {
+        // No user → always show defaults
+        loadTopTeams(DEFAULT_TEAMS);
+        loadTopPlayers(DEFAULT_PLAYERS);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchMatches();
+    });
   </script>
 </body>
 </html>

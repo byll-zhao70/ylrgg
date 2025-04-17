@@ -189,6 +189,7 @@
 
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
   <script>
     // Initialize Firebase (use your project's config)
     const firebaseConfig = {
@@ -202,6 +203,7 @@
     }
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
+    const db = firebase.firestore();
 
     // Check auth state and update UI accordingly
     firebase.auth().onAuthStateChanged((user) => {
@@ -398,6 +400,10 @@
           <img src="${data.data.info.img}" alt="Player Image">
           <div>
             <h1>${data.data.info.name}</h1>
+            <!-- ADD: -->
+            <button id="favorite-btn" style="margin-top:8px;padding:6px 12px;">
+              ☆ Favorite
+            </button>
             <p>User: ${data.data.info.user}</p>
             <p>Country: ${data.data.info.country}</p>
           </div>
@@ -582,6 +588,58 @@
         container.appendChild(socialsSection);
       }
     }
+    async function loadPlayerFavorite(playerId, uid) {
+      const doc = await db.collection('favorites').doc(uid).get();
+      const favs = doc.exists ? doc.data().players || [] : [];
+      return favs.includes(playerId);
+    }
+
+    function updateFavoriteUI(isFav) {
+      const btn = document.getElementById('favorite-btn');
+      btn.textContent = isFav ? '✔ Favorited' : '☆ Favorite';
+      btn.style.backgroundColor = isFav ? '#4caf50' : '';
+      btn.style.color = isFav ? 'white' : '';
+    }
+
+    async function togglePlayerFavorite(playerId, uid) {
+      const ref = db.collection('favorites').doc(uid);
+      const doc = await ref.get();
+      let data = doc.exists ? doc.data() : { players: [], teams: [] };
+      const idx = data.players.indexOf(playerId);
+      if (idx > -1) data.players.splice(idx, 1);
+      else data.players.push(playerId);
+      await ref.set(data);
+      return idx === -1;
+    }
+
+    function initializeFavoriteButton(playerId) {
+      // grab the button you just rendered
+      const btn = document.getElementById('favorite-btn');
+      if (!btn) return;
+
+      // attempt to get the currently logged‑in user
+      const user = firebase.auth().currentUser;
+      if (!user) {
+        // not logged in → hide or disable
+        btn.style.display = 'none';
+        return;
+      }
+
+      const uid = user.uid;
+
+      // 2a) load initial favorite state
+      loadPlayerFavorite(playerId, uid)
+        .then(isFav => updateFavoriteUI(isFav))
+        .catch(console.error);
+
+      // 2b) install your click handler
+      btn.addEventListener('click', async () => {
+        // toggle in Firestore
+        const nowFav = await togglePlayerFavorite(playerId, uid);
+        // update UI
+        updateFavoriteUI(nowFav);
+      });
+    }
 
     // On page load, read the playerid from the URL and fetch/display details
     window.addEventListener('load', async () => {
@@ -593,6 +651,7 @@
       const playerData = await fetchPlayerDetails(playerId);
       if (playerData) {
         displayPlayerDetails(playerData);
+        initializeFavoriteButton(playerId);
       } else {
         document.getElementById('player-details').innerHTML = '<p>Error loading player details.</p>';
       }

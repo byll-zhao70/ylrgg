@@ -171,6 +171,7 @@
   </div>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
   <script>
     // Initialize Firebase (use your project's config)
     const firebaseConfig = {
@@ -184,6 +185,7 @@
     }
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
+    const db = firebase.firestore();
 
     // Check auth state and update UI accordingly
     firebase.auth().onAuthStateChanged((user) => {
@@ -277,13 +279,17 @@
       const teamInfoSection = document.createElement('div');
       teamInfoSection.classList.add('team-details-section');
       teamInfoSection.innerHTML = `
-        <div class="team-info">
-          <img src="${data.data.info.logo}" alt="Team Logo">
-          <div>
-            <h1>${data.data.info.name}</h1>
-            <p>Tag: ${data.data.info.tag}</p>
-          </div>
+      <div class="team-info">
+        <img src="${data.data.info.logo}" alt="Team Logo">
+        <div>
+          <h1>${data.data.info.name}</h1>
+          <!-- ADD: -->
+          <button id="favorite-btn" style="margin-top:8px;padding:6px 12px;">
+            ☆ Favorite
+          </button>
+          <p>Tag: ${data.data.info.tag}</p>
         </div>
+      </div>
       `;
       container.appendChild(teamInfoSection);
 
@@ -359,6 +365,60 @@
       }
     }
 
+    async function loadTeamFavorite(teamId, uid) {
+      const doc = await db.collection('favorites').doc(uid).get();
+      const favs = doc.exists ? doc.data().teams || [] : [];
+      return favs.includes(teamId);
+    }
+
+    // reuse updateFavoriteUI and togglePlayerFavorite logic, but:
+    async function toggleTeamFavorite(teamId, uid) {
+      const ref = db.collection('favorites').doc(uid);
+      const doc = await ref.get();
+      let data = doc.exists ? doc.data() : { players: [], teams: [] };
+      const idx = data.teams.indexOf(teamId);
+      if (idx > -1) data.teams.splice(idx, 1);
+      else data.teams.push(teamId);
+      await ref.set(data);
+      return idx === -1;
+    }
+
+    function updateFavoriteUI(isFav) {
+      const btn = document.getElementById('favorite-btn');
+      btn.textContent = isFav ? '✔ Favorited' : '☆ Favorite';
+      btn.style.backgroundColor = isFav ? '#4caf50' : '';
+      btn.style.color = isFav ? 'white' : '';
+    }
+
+    function initializeFavoriteButton(teamId) {
+      // grab the button you just rendered
+      const btn = document.getElementById('favorite-btn');
+      if (!btn) return;
+
+      // attempt to get the currently logged‑in user
+      const user = firebase.auth().currentUser;
+      if (!user) {
+        // not logged in → hide or disable
+        btn.style.display = 'none';
+        return;
+      }
+
+      const uid = user.uid;
+
+      // 2a) load initial favorite state
+      loadTeamFavorite(teamId, uid)
+        .then(isFav => updateFavoriteUI(isFav))
+        .catch(console.error);
+
+      // 2b) install your click handler
+      btn.addEventListener('click', async () => {
+        // toggle in Firestore
+        const nowFav = await toggleTeamFavorite(teamId, uid);
+        // update UI
+        updateFavoriteUI(nowFav);
+      });
+    }
+
     // On page load, fetch and display team details based on the team id in the URL
     window.addEventListener('load', async () => {
       const teamId = getQueryParam('teamid');
@@ -369,6 +429,7 @@
       const teamData = await fetchTeamDetails(teamId);
       if (teamData) {
         displayTeamDetails(teamData);
+        initializeFavoriteButton(teamId);
       } else {
         document.getElementById('team-details').innerHTML = '<p>Error loading team details.</p>';
       }

@@ -206,17 +206,13 @@
       </div>
     </div>
     
-    <!-- Top Posts Section (unchanged) -->
-    <div class="section" id="top-posts">
-      <h2>Top Posts</h2>
-      <div class="items">
-        <div class="item" onclick="alert('Top Post 1 clicked')">Post 1</div>
-        <div class="item" onclick="alert('Top Post 2 clicked')">Post 2</div>
-        <div class="item" onclick="alert('Top Post 3 clicked')">Post 3</div>
-        <div class="item" onclick="alert('Top Post 4 clicked')">Post 4</div>
-      </div>
-    </div>
+<!-- Top Posts Section -->
+<div class="section" id="top-posts">
+  <h2>Top Posts</h2>
+  <div class="items">
+    <div class="item">Loading top posts...</div>
   </div>
+</div>
 
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
@@ -444,7 +440,60 @@
           .catch(error => console.error(`Error fetching player ${playerId}:`, error));
          });
     }
-
+    // Function to load top forum posts
+async function loadTopPosts() {
+  try {
+    const postsSnapshot = await db.collection('forum-posts')
+      .orderBy('likes', 'desc') // Sort by most likes first
+      .limit(4) // Get only top 4 posts
+      .get();
+      
+    if (postsSnapshot.empty) {
+      document.querySelector('#top-posts .items').innerHTML = 
+        '<div class="item">No posts found</div>';
+      return;
+    }
+    
+    // Get the posts container
+    const postsContainer = document.querySelector('#top-posts .items');
+    postsContainer.innerHTML = ''; // Clear existing content
+    
+    // Add each post
+    postsSnapshot.forEach(doc => {
+      const post = doc.data();
+      const postId = doc.id;
+      
+      // Create post item element
+      const postItem = document.createElement('div');
+      postItem.className = 'item';
+      
+      // Create content for the post (truncate if too long)
+      const content = post.content.length > 60 
+        ? post.content.substring(0, 60) + '...' 
+        : post.content;
+      
+      // Build the HTML content
+      postItem.innerHTML = `
+        <strong>${post.username}</strong>
+        <p>${content}</p>
+        <span>❤️ ${post.likes || 0}</span>
+      `;
+      
+      // Add click event to navigate to forums
+      postItem.addEventListener('click', () => {
+        window.location.href = `forums.html#post-${postId}`;
+      });
+      
+      // Add to container
+      postsContainer.appendChild(postItem);
+    });
+    
+  } catch (error) {
+    console.error('Error loading top posts:', error);
+    document.querySelector('#top-posts .items').innerHTML = 
+      '<div class="item">Error loading posts</div>';
+  }
+}
     function initializeTopLists() {
       const DEFAULT_TEAMS   = [1034, 188, 2, 1001];
       const DEFAULT_PLAYERS = [3885, 817, 1265, 18350];
@@ -474,6 +523,7 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       fetchMatches();
+      loadTopPosts();
     });
   </script>
 </body>
